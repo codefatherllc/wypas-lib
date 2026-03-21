@@ -105,3 +105,32 @@ func decodeRLE(data []byte) *image.RGBA {
 func (s *SpriteFile) Close() error {
 	return nil
 }
+
+func (s *SpriteFile) Signature() uint32   { return s.signature }
+func (s *SpriteFile) SpriteCount() uint32 { return s.spriteCount }
+
+func (s *SpriteFile) RawSpriteData(id uint32) ([]byte, error) {
+	if id == 0 || id > s.spriteCount {
+		return nil, fmt.Errorf("sprite id %d out of range [1, %d]", id, s.spriteCount)
+	}
+	offset := s.offsets[id-1]
+	if offset == 0 {
+		return nil, nil
+	}
+	pos := int(offset)
+	if pos+5 > len(s.data) {
+		return nil, fmt.Errorf("sprite %d: offset past end of data", id)
+	}
+	colorKey := s.data[pos : pos+3]
+	pos += 3
+	dataSize := int(binary.LittleEndian.Uint16(s.data[pos:]))
+	pos += 2
+	if pos+dataSize > len(s.data) {
+		return nil, fmt.Errorf("sprite %d: data extends past end of file", id)
+	}
+	buf := make([]byte, 0, 3+2+dataSize)
+	buf = append(buf, colorKey...)
+	buf = binary.LittleEndian.AppendUint16(buf, uint16(dataSize))
+	buf = append(buf, s.data[pos:pos+dataSize]...)
+	return buf, nil
+}

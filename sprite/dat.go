@@ -15,6 +15,8 @@ type DatFile struct {
 	MissileCount uint16
 	Items        map[uint16]*DatItem
 	Outfits      map[uint16]*DatItem
+	Effects      map[uint16]*DatItem
+	Missiles     map[uint16]*DatItem
 }
 
 type DatItem struct {
@@ -73,6 +75,24 @@ func parseDAT(path string) (*DatFile, error) {
 			return nil, fmt.Errorf("read outfit %d: %w", id, err)
 		}
 		dat.Outfits[id] = outfit
+	}
+
+	dat.Effects = make(map[uint16]*DatItem, effectCount)
+	for id := uint16(1); id <= effectCount; id++ {
+		effect, err := readDatItem(f, id)
+		if err != nil {
+			return nil, fmt.Errorf("read effect %d: %w", id, err)
+		}
+		dat.Effects[id] = effect
+	}
+
+	dat.Missiles = make(map[uint16]*DatItem, missileCount)
+	for id := uint16(1); id <= missileCount; id++ {
+		missile, err := readDatItem(f, id)
+		if err != nil {
+			return nil, fmt.Errorf("read missile %d: %w", id, err)
+		}
+		dat.Missiles[id] = missile
 	}
 
 	return dat, nil
