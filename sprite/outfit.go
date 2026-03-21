@@ -130,7 +130,12 @@ func spriteIndex(anim, z, y, x, l, h, w int, item *DatItem) int {
 	return ((((((anim%ac)*int(item.ZDiv)+z)*int(item.YDiv)+y)*int(item.XDiv)+x)*int(item.ColorLayers)+l)*int(item.Height)+h)*int(item.Width) + w
 }
 
-func (c *Cache) OutfitPNG(looktype uint16, head, body, legs, feet, addons, direction int, mount uint16) ([]byte, error) {
+func (c *Cache) OutfitPNG(looktype uint16, head, body, legs, feet, addons, direction int, mount uint16, animFrames ...int) ([]byte, error) {
+	anim := 0
+	if len(animFrames) > 0 {
+		anim = animFrames[0]
+	}
+
 	head = clampColor(head)
 	body = clampColor(body)
 	legs = clampColor(legs)
@@ -172,37 +177,37 @@ func (c *Cache) OutfitPNG(looktype uint16, head, body, legs, feet, addons, direc
 	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
 
 	if mountItem != nil {
-		if err := renderOutfitLayer(c, canvas, mountItem, canvasW, canvasH, 0, direction, 0, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
+		if err := renderOutfitLayer(c, canvas, mountItem, canvasW, canvasH, 0, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
 			return nil, fmt.Errorf("render mount: %w", err)
 		}
 		zPattern := 0
 		if int(outfit.ZDiv) > 1 {
 			zPattern = 1
 		}
-		if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 0, direction, zPattern, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
+		if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 0, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
 			return nil, fmt.Errorf("render base outfit: %w", err)
 		}
 		if addons&1 != 0 && int(outfit.YDiv) > 1 {
-			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 1, direction, zPattern, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
+			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 1, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
 				return nil, fmt.Errorf("render addon1: %w", err)
 			}
 		}
 		if addons&2 != 0 && int(outfit.YDiv) > 2 {
-			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 2, direction, zPattern, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
+			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 2, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
 				return nil, fmt.Errorf("render addon2: %w", err)
 			}
 		}
 	} else {
-		if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 0, direction, 0, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
+		if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 0, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, false); err != nil {
 			return nil, fmt.Errorf("render base outfit: %w", err)
 		}
 		if addons&1 != 0 && int(outfit.YDiv) > 1 {
-			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 1, direction, 0, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
+			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 1, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
 				return nil, fmt.Errorf("render addon1: %w", err)
 			}
 		}
 		if addons&2 != 0 && int(outfit.YDiv) > 2 {
-			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 2, direction, 0, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
+			if err := renderOutfitLayer(c, canvas, outfit, canvasW, canvasH, 2, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, true); err != nil {
 				return nil, fmt.Errorf("render addon2: %w", err)
 			}
 		}
@@ -219,6 +224,7 @@ func renderOutfitLayer(
 	ydiv int,
 	dir int,
 	zPattern int,
+	anim int,
 	headRGB, bodyRGB, legsRGB, feetRGB [3]uint8,
 	isAddon bool,
 ) error {
@@ -234,7 +240,7 @@ func renderOutfitLayer(
 			canvasX := offsetX + (w-1-wtile)*32
 			canvasY := offsetY + (h-1-htile)*32
 
-			baseIdx := spriteIndex(0, zPattern, ydiv, dir, 0, htile, wtile, item)
+			baseIdx := spriteIndex(anim, zPattern, ydiv, dir, 0, htile, wtile, item)
 			if baseIdx < 0 || baseIdx >= len(item.SpriteIDs) {
 				continue
 			}
@@ -242,7 +248,7 @@ func renderOutfitLayer(
 
 			var overlayImg *image.RGBA
 			if cl >= 2 {
-				overlayIdx := spriteIndex(0, zPattern, ydiv, dir, 1, htile, wtile, item)
+				overlayIdx := spriteIndex(anim, zPattern, ydiv, dir, 1, htile, wtile, item)
 				if overlayIdx >= 0 && overlayIdx < len(item.SpriteIDs) {
 					overlaySprID := item.SpriteIDs[overlayIdx]
 					if overlaySprID != 0 {
