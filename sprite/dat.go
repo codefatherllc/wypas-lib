@@ -160,60 +160,39 @@ func readDatItem(r io.Reader, clientID uint16) (*DatItem, error) {
 }
 
 // readFlagData reads the data bytes for a .dat flag attribute.
-// Flag numbering matches ObjectBuilder MetadataFlags6 (format 9.6 / 10.10-10.56).
-// This differs from OTClient's internal ThingAttr enum which remaps flags!
-//
-// ObjectBuilder format 6 flags:
-//   0x00 Ground(u16)     0x01 GroundBorder    0x02 OnBottom       0x03 OnTop
-//   0x04 Container       0x05 Stackable       0x06 ForceUse       0x07 MultiUse
-//   0x08 Writable(u16)   0x09 WritableOnce(u16) 0x0A FluidContainer 0x0B Fluid
-//   0x0C Unpassable      0x0D Unmoveable      0x0E BlockMissile   0x0F BlockPathfind
-//   0x10 NoMoveAnimation 0x11 Pickupable      0x12 Hangable       0x13 Vertical
-//   0x14 Horizontal      0x15 Rotatable       0x16 Light(u16+u16) 0x17 DontHide
-//   0x18 Translucent     0x19 Offset(u16+u16) 0x1A Elevation(u16) 0x1B LyingObject
-//   0x1C AnimateAlways   0x1D Minimap(u16)    0x1E LensHelp(u16)  0x1F FullGround
-//   0x20 IgnoreLook      0x21 Cloth(u16)      0x22 Market(variable) 0x23 DefaultAction(u16)
-//   0x24 Wrappable       0x25 Unwrappable     0x26 TopEffect      0x27 Bones(16 bytes)
-//   0xFE Usable          0xFF LastFlag (terminator)
+// Matches the proven PHP parser from htdocs/class.tibia.php (works with Wypas custom .dat).
+// Uses OTClient flag numbering (not ObjectBuilder format 6).
 func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 	switch flag {
 	// No data (boolean flags)
 	case 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
 		0x10, 0x11, 0x12, 0x13, 0x14,
-		0x15, 0x17,
-		0x18, 0x1B,
-		0x1C, 0x1F,
-		0x20, 0x24, 0x25, 0x26,
-		0xFE:
+		0x16, 0x17,
+		0x1A, 0x1B,
+		0x1E, 0x1F:
 		return nil, nil
 
 	// 2 bytes (single uint16)
 	case 0x00, // Ground: speed
 		0x08, 0x09, // Writable, WritableOnce: maxTextLen
-		0x1A,       // Elevation
-		0x1D, 0x1E, // Minimap, LensHelp
-		0x21,       // Cloth: slot
-		0x23:       // DefaultAction
+		0x19,       // Elevation
+		0x1C, 0x1D, // MinimapColor, LensHelp
+		0x20,       // Cloth
+		0x22:       // Usable
 		buf := make([]byte, 2)
 		_, err := io.ReadFull(r, buf)
 		return buf, err
 
 	// 4 bytes (two uint16)
-	case 0x16, // Light: intensity + color
-		0x19: // Offset/Displacement: x + y
+	case 0x15, // Light: intensity + color
+		0x18: // Displacement: x + y
 		buf := make([]byte, 4)
 		_, err := io.ReadFull(r, buf)
 		return buf, err
 
-	// 16 bytes (Bones: 4 directions × 2 × uint16)
-	case 0x27:
-		buf := make([]byte, 16)
-		_, err := io.ReadFull(r, buf)
-		return buf, err
-
 	// Variable (Market: 3×u16 + string + 2×u16)
-	case 0x22:
+	case 0x21:
 		buf := make([]byte, 6)
 		if _, err := io.ReadFull(r, buf); err != nil {
 			return buf, err
