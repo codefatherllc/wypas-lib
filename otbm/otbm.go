@@ -24,8 +24,9 @@ const (
 )
 
 type MapTile struct {
-	Items []uint16
-	Flags uint32
+	Items   []uint16
+	Flags   uint32
+	HouseID uint32
 }
 
 type Town struct {
@@ -129,11 +130,14 @@ func parseTileArea(node *Node, gm *GameMap, floorSet map[uint8]bool) error {
 		y := baseY + uint16(offsetY)
 		z := baseZ
 
-		if tileNode.Type == NodeHouseTile {
-			tileNode.Skip(4)
-		}
-
 		tile := &MapTile{}
+		if tileNode.Type == NodeHouseTile {
+			hid, err := tileNode.GetU32()
+			if err != nil {
+				continue
+			}
+			tile.HouseID = hid
+		}
 
 		for tileNode.Remaining() > 0 {
 			attr, err := tileNode.GetU8()
