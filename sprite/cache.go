@@ -154,24 +154,24 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 
 	w := int(missile.Width)
 	h := int(missile.Height)
-	dirs := int(missile.XDiv)
-	if dirs == 0 {
-		dirs = 1
-	}
-	direction = direction % dirs
-
-	sprPerDir := w * h
-	if sprPerDir == 0 {
-		sprPerDir = 1
-	}
+	xd := int(missile.XDiv)
+	yd := int(missile.YDiv)
+	if xd == 0 { xd = 1 }
+	if yd == 0 { yd = 1 }
+	totalDirs := xd * yd
+	direction = direction % totalDirs
+	xPat := direction % xd
+	yPat := direction / xd
 
 	canvasW := w * 32
 	canvasH := h * 32
 	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
 
+	layers := int(missile.ColorLayers)
+	if layers == 0 { layers = 1 }
 	for ht := 0; ht < h; ht++ {
 		for wt := 0; wt < w; wt++ {
-			idx := direction*sprPerDir + ht*w + wt
+			idx := ((yPat*xd + xPat) * layers) * h * w + ht*w + wt
 			if idx >= len(missile.SpriteIDs) {
 				continue
 			}
