@@ -139,28 +139,52 @@ func readDatItem(r io.Reader, clientID uint16) (*DatItem, error) {
 	}, nil
 }
 
+// readFlagData reads the data bytes for a .dat flag attribute.
+// Flag values and sizes match the otclient ThingType::unserialize (thingtype.cpp).
+//
+// Attr enum (from thingtype.h):
+//   0x00 Ground(u16)  0x01 GroundBorder  0x02 OnBottom     0x03 OnTop
+//   0x04 Container    0x05 Stackable     0x06 ForceUse     0x07 MultiUse
+//   0x08 Writable(u16) 0x09 WritableOnce(u16) 0x0A FluidContainer 0x0B Splash
+//   0x0C NotWalkable  0x0D NotMoveable   0x0E BlockProjectile 0x0F NotPathable
+//   0x10 Pickupable   0x11 Hangable      0x12 HookSouth    0x13 HookEast
+//   0x14 Rotatable    0x15 Light(u16+u16) 0x16 DontHide    0x17 Translucent
+//   0x18 Displacement(u16+u16) 0x19 Elevation(u16) 0x1A LyingCorpse 0x1B AnimateAlways
+//   0x1C MinimapColor(u16) 0x1D LensHelp(u16) 0x1E FullGround  0x1F Look
+//   0x20 Cloth(u16)   0x21 Market(variable) 0x22 Usable(u16) 0x23 Wrapable
+//   0x24 Unwrapable   0x25 TopEffect    0x26 Bones(16 bytes)
 func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 	switch flag {
+	// No data (boolean flags)
 	case 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
 		0x10, 0x11, 0x12, 0x13, 0x14,
 		0x16, 0x17,
 		0x1A, 0x1B,
 		0x1E, 0x1F,
-		0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
+		0x23, 0x24, 0x25,
 		0xFC, 0xFD, 0xFE:
 		return nil, nil
 
-	case 0x00, 0x08, 0x09, 0x19, 0x1C, 0x1D, 0x20, 0xFB:
+	// 2 bytes (single uint16)
+	case 0x00, 0x08, 0x09, 0x19, 0x1C, 0x1D, 0x20, 0x22:
 		buf := make([]byte, 2)
 		_, err := io.ReadFull(r, buf)
 		return buf, err
 
+	// 4 bytes (two uint16: Light intensity+color, Displacement x+y)
 	case 0x15, 0x18:
 		buf := make([]byte, 4)
 		_, err := io.ReadFull(r, buf)
 		return buf, err
 
+	// 16 bytes (Bones: 4 directions × 2 × uint16)
+	case 0x26:
+		buf := make([]byte, 16)
+		_, err := io.ReadFull(r, buf)
+		return buf, err
+
+	// Variable (Market: 3×u16 + string + 2×u16)
 	case 0x21:
 		buf := make([]byte, 6)
 		if _, err := io.ReadFull(r, buf); err != nil {
