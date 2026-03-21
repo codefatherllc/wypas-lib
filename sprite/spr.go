@@ -13,6 +13,7 @@ type SpriteFile struct {
 	spriteCount uint32
 	offsets     []uint32
 	data        []byte
+	overrides   map[uint32]*image.RGBA
 }
 
 func parseSPR(path string) (*SpriteFile, error) {
@@ -46,7 +47,19 @@ func parseSPR(path string) (*SpriteFile, error) {
 	}, nil
 }
 
+func (s *SpriteFile) SetRGBA(id uint32, img *image.RGBA) {
+	if s.overrides == nil {
+		s.overrides = make(map[uint32]*image.RGBA)
+	}
+	s.overrides[id] = img
+}
+
 func (s *SpriteFile) GetRGBA(id uint32) (*image.RGBA, error) {
+	if s.overrides != nil {
+		if img, ok := s.overrides[id]; ok {
+			return img, nil
+		}
+	}
 	if id == 0 || id > s.spriteCount {
 		return nil, fmt.Errorf("sprite id %d out of range [1, %d]", id, s.spriteCount)
 	}
