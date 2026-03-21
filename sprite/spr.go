@@ -102,6 +102,33 @@ func decodeRLE(data []byte) *image.RGBA {
 	return img
 }
 
+func ParseSPRFromBytes(data []byte) (*SpriteFile, error) {
+	if len(data) < 8 {
+		return nil, fmt.Errorf("spr file too small: %d bytes", len(data))
+	}
+
+	sig := binary.LittleEndian.Uint32(data[0:4])
+	count := binary.LittleEndian.Uint32(data[4:8])
+
+	headerSize := 8
+	offsetsEnd := headerSize + int(count)*4
+	if offsetsEnd > len(data) {
+		return nil, fmt.Errorf("spr offsets exceed file size")
+	}
+
+	offsets := make([]uint32, count)
+	for i := uint32(0); i < count; i++ {
+		offsets[i] = binary.LittleEndian.Uint32(data[headerSize+int(i)*4:])
+	}
+
+	return &SpriteFile{
+		signature:   sig,
+		spriteCount: count,
+		offsets:     offsets,
+		data:        data,
+	}, nil
+}
+
 func (s *SpriteFile) Close() error {
 	return nil
 }

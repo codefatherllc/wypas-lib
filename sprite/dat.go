@@ -98,6 +98,66 @@ func parseDAT(path string) (*DatFile, error) {
 	return dat, nil
 }
 
+func ParseDATFromReader(r io.Reader) (*DatFile, error) {
+	var sig uint32
+	if err := binary.Read(r, binary.LittleEndian, &sig); err != nil {
+		return nil, fmt.Errorf("read dat signature: %w", err)
+	}
+
+	var itemCount, outfitCount, effectCount, missileCount uint16
+	for _, p := range []*uint16{&itemCount, &outfitCount, &effectCount, &missileCount} {
+		if err := binary.Read(r, binary.LittleEndian, p); err != nil {
+			return nil, fmt.Errorf("read dat header: %w", err)
+		}
+	}
+
+	dat := &DatFile{
+		Signature:    sig,
+		ItemCount:    itemCount,
+		OutfitCount:  outfitCount,
+		EffectCount:  effectCount,
+		MissileCount: missileCount,
+		Items:        make(map[uint16]*DatItem),
+	}
+
+	for id := uint16(100); id <= itemCount; id++ {
+		item, err := readDatItem(r, id)
+		if err != nil {
+			return nil, fmt.Errorf("read item %d: %w", id, err)
+		}
+		dat.Items[id] = item
+	}
+
+	dat.Outfits = make(map[uint16]*DatItem, outfitCount)
+	for id := uint16(1); id <= outfitCount; id++ {
+		outfit, err := readDatItem(r, id)
+		if err != nil {
+			return nil, fmt.Errorf("read outfit %d: %w", id, err)
+		}
+		dat.Outfits[id] = outfit
+	}
+
+	dat.Effects = make(map[uint16]*DatItem, effectCount)
+	for id := uint16(1); id <= effectCount; id++ {
+		effect, err := readDatItem(r, id)
+		if err != nil {
+			return nil, fmt.Errorf("read effect %d: %w", id, err)
+		}
+		dat.Effects[id] = effect
+	}
+
+	dat.Missiles = make(map[uint16]*DatItem, missileCount)
+	for id := uint16(1); id <= missileCount; id++ {
+		missile, err := readDatItem(r, id)
+		if err != nil {
+			return nil, fmt.Errorf("read missile %d: %w", id, err)
+		}
+		dat.Missiles[id] = missile
+	}
+
+	return dat, nil
+}
+
 func readDatItem(r io.Reader, clientID uint16) (*DatItem, error) {
 	flags := make(map[uint8][]byte)
 
