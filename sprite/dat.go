@@ -191,7 +191,7 @@ func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 		_, err := io.ReadFull(r, buf)
 		return buf, err
 
-	// Variable (Market: 3×u16 + string + 2×u16)
+	// Variable (Market: 3×u16 + nameLen u16 + name + 2×u16)
 	case 0x21:
 		buf := make([]byte, 6)
 		if _, err := io.ReadFull(r, buf); err != nil {
@@ -201,13 +201,17 @@ func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 		if err := binary.Read(r, binary.LittleEndian, &nameLen); err != nil {
 			return buf, err
 		}
+		nameLenBytes := make([]byte, 2)
+		binary.LittleEndian.PutUint16(nameLenBytes, nameLen)
+		buf = append(buf, nameLenBytes...)
 		name := make([]byte, nameLen)
 		if _, err := io.ReadFull(r, name); err != nil {
 			return append(buf, name...), err
 		}
+		buf = append(buf, name...)
 		tail := make([]byte, 4)
 		_, err := io.ReadFull(r, tail)
-		return append(append(buf, name...), tail...), err
+		return append(buf, tail...), err
 
 	default:
 		return nil, nil
