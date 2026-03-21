@@ -12,12 +12,18 @@ const (
 	hsiSIValues = 7
 )
 
-var outfitPalette [hsiHSteps * hsiSIValues][3]uint8
+var OutfitPalette [hsiHSteps * hsiSIValues][3]uint8
 
 func init() {
 	for i := 0; i < hsiHSteps*hsiSIValues; i++ {
-		outfitPalette[i] = computeOutfitColor(i)
+		OutfitPalette[i] = computeOutfitColor(i)
 	}
+}
+
+func OutfitPaletteRGB() [][3]uint8 {
+	out := make([][3]uint8, len(OutfitPalette))
+	copy(out, OutfitPalette[:])
+	return out
 }
 
 func computeOutfitColor(c int) [3]uint8 {
@@ -136,10 +142,10 @@ func (c *Cache) OutfitPNG(looktype uint16, head, body, legs, feet, addons, direc
 		return renderPNG(img)
 	}
 
-	headRGB := outfitPalette[head]
-	bodyRGB := outfitPalette[body]
-	legsRGB := outfitPalette[legs]
-	feetRGB := outfitPalette[feet]
+	headRGB := OutfitPalette[head]
+	bodyRGB := OutfitPalette[body]
+	legsRGB := OutfitPalette[legs]
+	feetRGB := OutfitPalette[feet]
 
 	if direction < 0 || direction > 3 {
 		direction = 2

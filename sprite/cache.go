@@ -92,5 +92,112 @@ func (c *Cache) PNGByServerID(id uint16) ([]byte, error) {
 	return renderPNG(img)
 }
 
+func (c *Cache) EffectPNG(id uint16, frame int) ([]byte, error) {
+	effect, ok := c.dat.Effects[id]
+	if !ok || len(effect.SpriteIDs) == 0 {
+		img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+		return renderPNG(img)
+	}
+
+	w := int(effect.Width)
+	h := int(effect.Height)
+	sprPerFrame := w * h
+	if sprPerFrame == 0 {
+		sprPerFrame = 1
+	}
+	totalFrames := len(effect.SpriteIDs) / sprPerFrame
+	if totalFrames == 0 {
+		totalFrames = 1
+	}
+	frame = frame % totalFrames
+
+	canvasW := w * 32
+	canvasH := h * 32
+	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
+
+	for ht := 0; ht < h; ht++ {
+		for wt := 0; wt < w; wt++ {
+			idx := frame*sprPerFrame + ht*w + wt
+			if idx >= len(effect.SpriteIDs) {
+				continue
+			}
+			sprID := effect.SpriteIDs[idx]
+			if sprID == 0 {
+				continue
+			}
+			tile, err := c.spr.GetRGBA(sprID)
+			if err != nil {
+				continue
+			}
+			dx := (w - 1 - wt) * 32
+			dy := (h - 1 - ht) * 32
+			for y := 0; y < 32; y++ {
+				for x := 0; x < 32; x++ {
+					px := tile.RGBAAt(x, y)
+					if px.A > 0 {
+						canvas.SetRGBA(dx+x, dy+y, px)
+					}
+				}
+			}
+		}
+	}
+
+	return renderPNG(canvas)
+}
+
+func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
+	missile, ok := c.dat.Missiles[id]
+	if !ok || len(missile.SpriteIDs) == 0 {
+		img := image.NewRGBA(image.Rect(0, 0, 1, 1))
+		return renderPNG(img)
+	}
+
+	w := int(missile.Width)
+	h := int(missile.Height)
+	dirs := int(missile.XDiv)
+	if dirs == 0 {
+		dirs = 1
+	}
+	direction = direction % dirs
+
+	sprPerDir := w * h
+	if sprPerDir == 0 {
+		sprPerDir = 1
+	}
+
+	canvasW := w * 32
+	canvasH := h * 32
+	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
+
+	for ht := 0; ht < h; ht++ {
+		for wt := 0; wt < w; wt++ {
+			idx := direction*sprPerDir + ht*w + wt
+			if idx >= len(missile.SpriteIDs) {
+				continue
+			}
+			sprID := missile.SpriteIDs[idx]
+			if sprID == 0 {
+				continue
+			}
+			tile, err := c.spr.GetRGBA(sprID)
+			if err != nil {
+				continue
+			}
+			dx := (w - 1 - wt) * 32
+			dy := (h - 1 - ht) * 32
+			for y := 0; y < 32; y++ {
+				for x := 0; x < 32; x++ {
+					px := tile.RGBAAt(x, y)
+					if px.A > 0 {
+						canvas.SetRGBA(dx+x, dy+y, px)
+					}
+				}
+			}
+		}
+	}
+
+	return renderPNG(canvas)
+}
+
 func (c *Cache) Dat() *DatFile    { return c.dat }
 func (c *Cache) Spr() *SpriteFile { return c.spr }

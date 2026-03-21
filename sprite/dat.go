@@ -214,6 +214,6 @@ func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 		return append(buf, tail...), err
 
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("unknown dat flag 0x%02x", flag)
 	}
 }
