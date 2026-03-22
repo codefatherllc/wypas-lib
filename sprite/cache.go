@@ -101,23 +101,24 @@ func (c *Cache) EffectPNG(id uint16, frame int) ([]byte, error) {
 
 	w := int(effect.Width)
 	h := int(effect.Height)
-	sprPerFrame := w * h
-	if sprPerFrame == 0 {
-		sprPerFrame = 1
-	}
-	totalFrames := len(effect.SpriteIDs) / sprPerFrame
-	if totalFrames == 0 {
-		totalFrames = 1
-	}
-	frame = frame % totalFrames
+	ac := int(effect.AnimCount)
+	if ac == 0 { ac = 1 }
+	frame = frame % ac
 
 	canvasW := w * 32
 	canvasH := h * 32
 	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
 
+	// Use spriteIndex formula: anim→z→y→x→layer→h→w
+	// Effects: xDiv=1, yDiv=1, zDiv=1, layers=1 typically
+	xd := int(effect.XDiv); if xd == 0 { xd = 1 }
+	yd := int(effect.YDiv); if yd == 0 { yd = 1 }
+	zd := int(effect.ZDiv); if zd == 0 { zd = 1 }
+	layers := int(effect.ColorLayers); if layers == 0 { layers = 1 }
+
 	for ht := 0; ht < h; ht++ {
 		for wt := 0; wt < w; wt++ {
-			idx := frame*sprPerFrame + ht*w + wt
+			idx := ((((frame*zd+0)*yd+0)*xd+0)*layers+0)*h*w + ht*w + wt
 			if idx >= len(effect.SpriteIDs) {
 				continue
 			}
@@ -169,9 +170,14 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 
 	layers := int(missile.ColorLayers)
 	if layers == 0 { layers = 1 }
+	animCount := int(missile.AnimCount)
+	if animCount == 0 { animCount = 1 }
+	zd := int(missile.ZDiv)
+	if zd == 0 { zd = 1 }
 	for ht := 0; ht < h; ht++ {
 		for wt := 0; wt < w; wt++ {
-			idx := ((yPat*xd + xPat) * layers) * h * w + ht*w + wt
+			// Use same spriteIndex formula as outfits: anim→z→y→x→layer→h→w
+			idx := ((((0*zd+0)*yd+yPat)*xd+xPat)*layers+0)*h*w + ht*w + wt
 			if idx >= len(missile.SpriteIDs) {
 				continue
 			}
