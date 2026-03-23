@@ -6,6 +6,8 @@ import (
 	"image/color"
 	"log"
 	"sync"
+
+	"github.com/codefatherllc/wypas-lib/gpu"
 )
 
 type Cache struct {
@@ -14,6 +16,7 @@ type Cache struct {
 	mu             sync.RWMutex
 	png            map[uint16][]byte
 	pngByServerID  map[uint16][]byte
+	renderer       gpu.Renderer
 }
 
 func NewCache(datPath, sprPath string, serverToClient map[uint16]uint16) (*Cache, error) {
@@ -191,5 +194,6 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 	return renderPNG(canvas)
 }
 
-func (c *Cache) Dat() *DatFile    { return c.dat }
-func (c *Cache) Spr() *SpriteFile { return c.spr }
+func (c *Cache) Dat() *DatFile        { return c.dat }
+func (c *Cache) Spr() *SpriteFile     { return c.spr }
+func (c *Cache) SetRenderer(r gpu.Renderer) { c.renderer = r }

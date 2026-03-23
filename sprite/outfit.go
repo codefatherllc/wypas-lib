@@ -5,6 +5,8 @@ import (
 	"image"
 	"image/color"
 	"math"
+
+	"github.com/codefatherllc/wypas-lib/gpu"
 )
 
 const (
@@ -172,6 +174,10 @@ func (c *Cache) OutfitPNG(looktype uint16, head, body, legs, feet, addons, direc
 				canvasH = mh
 			}
 		}
+	}
+
+	if c.renderer != nil {
+		return c.outfitPNGGPU(outfit, mountItem, canvasW, canvasH, direction, addons, anim, headRGB, bodyRGB, legsRGB, feetRGB)
 	}
 
 	canvas := image.NewRGBA(image.Rect(0, 0, canvasW, canvasH))
@@ -413,4 +419,155 @@ func autocropRGBA(img *image.RGBA) *image.RGBA {
 		copy(cropped.Pix[(y-minY)*cropped.Stride:], img.Pix[y*img.Stride+minX*4:(y*img.Stride+(maxX+1)*4)])
 	}
 	return cropped
+}
+
+func (c *Cache) outfitPNGGPU(
+	outfit *DatItem,
+	mountItem *DatItem,
+	canvasW, canvasH int,
+	direction, addons, anim int,
+	headRGB, bodyRGB, legsRGB, feetRGB [3]uint8,
+) ([]byte, error) {
+	var ops []gpu.BlitOp
+
+	if mountItem != nil {
+		mountOps, err := c.renderOutfitLayerGPU(mountItem, canvasW, canvasH, 0, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, false)
+		if err != nil {
+			return nil, fmt.Errorf("gpu render mount: %w", err)
+		}
+		ops = append(ops, mountOps...)
+
+		zPattern := 0
+		if int(outfit.ZDiv) > 1 {
+			zPattern = 1
+		}
+		baseOps, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 0, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, false)
+		if err != nil {
+			return nil, fmt.Errorf("gpu render base outfit: %w", err)
+		}
+		ops = append(ops, baseOps...)
+
+		if addons&1 != 0 && int(outfit.YDiv) > 1 {
+			a1Ops, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 1, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, true)
+			if err != nil {
+				return nil, fmt.Errorf("gpu render addon1: %w", err)
+			}
+			ops = append(ops, a1Ops...)
+		}
+		if addons&2 != 0 && int(outfit.YDiv) > 2 {
+			a2Ops, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 2, direction, zPattern, anim, headRGB, bodyRGB, legsRGB, feetRGB, true)
+			if err != nil {
+				return nil, fmt.Errorf("gpu render addon2: %w", err)
+			}
+			ops = append(ops, a2Ops...)
+		}
+	} else {
+		baseOps, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 0, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, false)
+		if err != nil {
+			return nil, fmt.Errorf("gpu render base outfit: %w", err)
+		}
+		ops = append(ops, baseOps...)
+
+		if addons&1 != 0 && int(outfit.YDiv) > 1 {
+			a1Ops, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 1, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, true)
+			if err != nil {
+				return nil, fmt.Errorf("gpu render addon1: %w", err)
+			}
+			ops = append(ops, a1Ops...)
+		}
+		if addons&2 != 0 && int(outfit.YDiv) > 2 {
+			a2Ops, err := c.renderOutfitLayerGPU(outfit, canvasW, canvasH, 2, direction, 0, anim, headRGB, bodyRGB, legsRGB, feetRGB, true)
+			if err != nil {
+				return nil, fmt.Errorf("gpu render addon2: %w", err)
+			}
+			ops = append(ops, a2Ops...)
+		}
+	}
+
+	pixels, err := c.renderer.Composite(canvasW, canvasH, ops)
+	if err != nil {
+		return nil, fmt.Errorf("gpu composite: %w", err)
+	}
+
+	canvas := &image.RGBA{
+		Pix:    pixels,
+		Stride: canvasW * 4,
+		Rect:   image.Rect(0, 0, canvasW, canvasH),
+	}
+	return renderPNG(autocropRGBA(canvas))
+}
+
+func (c *Cache) renderOutfitLayerGPU(
+	item *DatItem,
+	canvasW, canvasH int,
+	ydiv, dir, zPattern, anim int,
+	headRGB, bodyRGB, legsRGB, feetRGB [3]uint8,
+	isAddon bool,
+) ([]gpu.BlitOp, error) {
+	w := int(item.Width)
+	h := int(item.Height)
+	cl := int(item.ColorLayers)
+
+	offsetX := canvasW - w*32
+	offsetY := canvasH - h*32
+
+	var ops []gpu.BlitOp
+
+	for htile := 0; htile < h; htile++ {
+		for wtile := 0; wtile < w; wtile++ {
+			canvasX := offsetX + (w-1-wtile)*32
+			canvasY := offsetY + (h-1-htile)*32
+
+			baseIdx := spriteIndex(anim, zPattern, ydiv, dir, 0, htile, wtile, item)
+			if baseIdx < 0 || baseIdx >= len(item.SpriteIDs) {
+				continue
+			}
+			baseSprID := item.SpriteIDs[baseIdx]
+			if baseSprID == 0 {
+				continue
+			}
+
+			baseImg, err := c.spr.GetRGBA(baseSprID)
+			if err != nil {
+				continue
+			}
+
+			var overlayPix []byte
+			if cl >= 2 {
+				overlayIdx := spriteIndex(anim, zPattern, ydiv, dir, 1, htile, wtile, item)
+				if overlayIdx >= 0 && overlayIdx < len(item.SpriteIDs) {
+					overlaySprID := item.SpriteIDs[overlayIdx]
+					if overlaySprID != 0 {
+						img, err := c.spr.GetRGBA(overlaySprID)
+						if err == nil {
+							overlayPix = img.Pix
+						}
+					}
+				}
+			}
+
+			tinted, err := c.renderer.TintOutfit(gpu.OutfitTintParams{
+				Base:    baseImg.Pix,
+				Overlay: overlayPix,
+				Head:    headRGB,
+				Body:    bodyRGB,
+				Legs:    legsRGB,
+				Feet:    feetRGB,
+				IsAddon: isAddon,
+			})
+			if err != nil {
+				continue
+			}
+
+			ops = append(ops, gpu.BlitOp{
+				SrcPixels: tinted,
+				SrcW:      32,
+				SrcH:      32,
+				DstX:      canvasX,
+				DstY:      canvasY,
+			})
+		}
+	}
+
+	return ops, nil
 }
