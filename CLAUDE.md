@@ -17,11 +17,29 @@ No binary output. This is a library module consumed via `go get`.
 | `db` | `Open(dsn, maxOpen, maxIdle)` — MySQL pool with 5min conn lifetime |
 | `jwt` | `Claims`, `ParseToken`, `SignToken`, `Middleware`, `RequireAdmin`, `GetClaims` |
 | `middleware` | `CORS(origins...)` — Access-Control headers + OPTIONS preflight |
-| `otbm` | `ParseOTBM` — binary OTBM/OTB parser (tiles, towns, items) |
+| `otbm` | `ParseOTBM` — binary OTBM/OTB parser (tiles, towns, items, waypoints) |
 | `ratelimit` | `New(max, window)` → `Limiter.Allow(ip)` — in-memory sliding window |
 | `response` | `JSON(w, status, data)`, `Error(w, status, msg)` |
 | `sprite` | `Cache` (dat+spr loader, PNG render), `DatFile`, `SpriteFile`, outfit color palette |
 | `worlds` | `Load(path)` → `WorldList` from JSON, `All()`, `ByID()`, `Default()` |
+
+## OTBM Types
+
+`GameMap` holds `Tiles` (keyed by `PackPos(x,y,z)`), `Towns`, `Waypoints`, `FloorBounds`.
+
+`MapTile` has two item representations:
+- `Items []uint16` — flat server-ID list (backward compat)
+- `RichItems []MapItem` — full items with attributes
+
+`MapItem` fields: `ID`, `ActionID`, `UniqueID`, `TeleDest *TeleportDest`, `DoorID`, `DepotID`, `Text`, `Description`, `Charges`, `RuneCharges`, `Count`.
+
+`TeleportDest` — `X, Y uint16`, `Z uint8`.
+
+`Waypoint` — `Name string`, `X, Y uint16`, `Z uint8`.
+
+Attribute constants: `AttrActionID` (4), `AttrUniqueID` (5), `AttrText` (6), `AttrDesc` (7), `AttrTeleDest` (8), `AttrItem` (9), `AttrDepotID` (10), `AttrRuneCharges` (12), `AttrDoorID` (14), `AttrCount` (15), `AttrCharges` (22), `AttrAttrMap` (128).
+
+Tile flag constants: `TileFlagProtectionZone` (0x0001), `TileFlagNoPVP` (0x0004), `TileFlagNoLogout` (0x0008), `TileFlagPVPZone` (0x0010), `TileFlagRefresh` (0x0020).
 
 ## Conventions
 

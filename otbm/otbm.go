@@ -6,31 +6,85 @@ import (
 )
 
 const (
-	NodeMapData  = 2
-	NodeTileArea = 4
-	NodeTile     = 5
-	NodeItem     = 6
-	NodeTowns    = 12
-	NodeTown     = 13
+	NodeMapData   = 2
+	NodeTileArea  = 4
+	NodeTile      = 5
+	NodeItem      = 6
+	NodeTowns     = 12
+	NodeTown      = 13
 	NodeHouseTile = 14
+	NodeWaypoints = 15
+	NodeWaypoint  = 16
 )
 
 const (
 	AttrDescription = 1
+	AttrExtFile     = 2
 	AttrTileFlags   = 3
+	AttrActionID    = 4
+	AttrUniqueID    = 5
+	AttrText        = 6
+	AttrDesc        = 7
+	AttrTeleDest    = 8
 	AttrItem        = 9
+	AttrDepotID     = 10
 	AttrSpawnFile   = 11
+	AttrRuneCharges = 12
 	AttrHouseFile   = 13
+	AttrDoorID      = 14
+	AttrCount       = 15
+	AttrDuration    = 16
+	AttrDecayState  = 17
+	AttrWrittenDate = 18
+	AttrWrittenBy   = 19
+	AttrSleeperGUID = 20
+	AttrSleepStart  = 21
+	AttrCharges     = 22
+	AttrAttrMap     = 128
 )
 
+const (
+	TileFlagProtectionZone = 0x0001
+	TileFlagNoPVP          = 0x0004
+	TileFlagNoLogout       = 0x0008
+	TileFlagPVPZone        = 0x0010
+	TileFlagRefresh        = 0x0020
+)
+
+type TeleportDest struct {
+	X, Y uint16
+	Z    uint8
+}
+
+type MapItem struct {
+	ID           uint16
+	ActionID     uint16
+	UniqueID     uint16
+	TeleDest     *TeleportDest
+	DoorID       uint8
+	DepotID      uint16
+	Text         string
+	Description  string
+	Charges      uint16
+	RuneCharges  uint8
+	Count        uint8
+}
+
 type MapTile struct {
-	Items   []uint16
-	Flags   uint32
-	HouseID uint32
+	Items     []uint16
+	RichItems []MapItem
+	Flags     uint32
+	HouseID   uint32
 }
 
 type Town struct {
 	ID   uint32
+	Name string
+	X, Y uint16
+	Z    uint8
+}
+
+type Waypoint struct {
 	Name string
 	X, Y uint16
 	Z    uint8
@@ -41,12 +95,13 @@ type FloorBounds struct {
 }
 
 type GameMap struct {
-	Tiles              map[uint64]*MapTile
-	MinX, MinY         uint16
-	MaxX, MaxY         uint16
-	Floors             []uint8
-	Towns              []Town
-	FloorBounds        map[uint8]*FloorBounds
+	Tiles       map[uint64]*MapTile
+	MinX, MinY  uint16
+	MaxX, MaxY  uint16
+	Floors      []uint8
+	Towns       []Town
+	Waypoints   []Waypoint
+	FloorBounds map[uint8]*FloorBounds
 }
 
 func PackPos(x, y uint16, z uint8) uint64 {
@@ -85,6 +140,8 @@ func ParseOTBM(path string) (*GameMap, error) {
 				}
 			case NodeTowns:
 				parseTowns(child, gm)
+			case NodeWaypoints:
+				parseWaypoints(child, gm)
 			}
 		}
 	}
@@ -157,20 +214,9 @@ func parseTileArea(node *Node, gm *GameMap, floorSet map[uint8]bool) error {
 					break
 				}
 				tile.Items = append(tile.Items, sid)
+				tile.RichItems = append(tile.RichItems, MapItem{ID: sid})
 			default:
-				if attr == AttrDescription {
-					s, err := tileNode.GetString()
-					_ = s
-					if err != nil {
-						goto doneTileAttrs
-					}
-				} else if attr == AttrSpawnFile || attr == AttrHouseFile {
-					s, err := tileNode.GetString()
-					_ = s
-					if err != nil {
-						goto doneTileAttrs
-					}
-				} else {
+				if !skipTileAttr(tileNode, attr) {
 					goto doneTileAttrs
 				}
 			}
@@ -182,10 +228,15 @@ func parseTileArea(node *Node, gm *GameMap, floorSet map[uint8]bool) error {
 				continue
 			}
 			itemNode.ResetPos()
-			if itemNode.Remaining() >= 2 {
-				sid, _ := itemNode.GetU16()
-				tile.Items = append(tile.Items, sid)
+			if itemNode.Remaining() < 2 {
+				continue
 			}
+			sid, _ := itemNode.GetU16()
+			tile.Items = append(tile.Items, sid)
+
+			item := MapItem{ID: sid}
+			parseItemAttrs(itemNode, &item)
+			tile.RichItems = append(tile.RichItems, item)
 		}
 
 		if len(tile.Items) > 0 || tile.Flags != 0 {
@@ -229,6 +280,126 @@ func parseTileArea(node *Node, gm *GameMap, floorSet map[uint8]bool) error {
 	return nil
 }
 
+func skipTileAttr(node *Node, attr uint8) bool {
+	switch attr {
+	case AttrDescription, AttrSpawnFile, AttrHouseFile, AttrExtFile:
+		_, err := node.GetString()
+		return err == nil
+	default:
+		return false
+	}
+}
+
+func parseItemAttrs(node *Node, item *MapItem) {
+	for node.Remaining() > 0 {
+		attr, err := node.GetU8()
+		if err != nil {
+			return
+		}
+		switch attr {
+		case AttrActionID:
+			v, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			item.ActionID = v
+		case AttrUniqueID:
+			v, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			item.UniqueID = v
+		case AttrText:
+			v, err := node.GetString()
+			if err != nil {
+				return
+			}
+			item.Text = v
+		case AttrDesc:
+			v, err := node.GetString()
+			if err != nil {
+				return
+			}
+			item.Description = v
+		case AttrTeleDest:
+			x, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			y, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			z, err := node.GetU8()
+			if err != nil {
+				return
+			}
+			item.TeleDest = &TeleportDest{X: x, Y: y, Z: z}
+		case AttrDepotID:
+			v, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			item.DepotID = v
+		case AttrDoorID:
+			v, err := node.GetU8()
+			if err != nil {
+				return
+			}
+			item.DoorID = v
+		case AttrCharges:
+			v, err := node.GetU16()
+			if err != nil {
+				return
+			}
+			item.Charges = v
+		case AttrRuneCharges:
+			v, err := node.GetU8()
+			if err != nil {
+				return
+			}
+			item.RuneCharges = v
+		case AttrCount:
+			v, err := node.GetU8()
+			if err != nil {
+				return
+			}
+			item.Count = v
+		case AttrDuration:
+			if err := node.Skip(4); err != nil {
+				return
+			}
+		case AttrDecayState:
+			if err := node.Skip(1); err != nil {
+				return
+			}
+		case AttrWrittenDate:
+			if err := node.Skip(4); err != nil {
+				return
+			}
+		case AttrWrittenBy:
+			if _, err := node.GetString(); err != nil {
+				return
+			}
+		case AttrSleeperGUID:
+			if err := node.Skip(4); err != nil {
+				return
+			}
+		case AttrSleepStart:
+			if err := node.Skip(4); err != nil {
+				return
+			}
+		case AttrAttrMap:
+			// Attribute map: 2-byte length-prefixed key-value pairs.
+			// Skip the rest of the node data since we can't know the
+			// internal structure without a full deserializer.
+			return
+		default:
+			return
+		}
+	}
+}
+
 func parseTowns(node *Node, gm *GameMap) {
 	for _, townNode := range node.Children {
 		if townNode.Type != NodeTown {
@@ -259,6 +430,39 @@ func parseTowns(node *Node, gm *GameMap) {
 
 		gm.Towns = append(gm.Towns, Town{
 			ID:   id,
+			Name: name,
+			X:    x,
+			Y:    y,
+			Z:    z,
+		})
+	}
+}
+
+func parseWaypoints(node *Node, gm *GameMap) {
+	for _, wpNode := range node.Children {
+		if wpNode.Type != NodeWaypoint {
+			continue
+		}
+		wpNode.ResetPos()
+
+		name, err := wpNode.GetString()
+		if err != nil {
+			continue
+		}
+		x, err := wpNode.GetU16()
+		if err != nil {
+			continue
+		}
+		y, err := wpNode.GetU16()
+		if err != nil {
+			continue
+		}
+		z, err := wpNode.GetU8()
+		if err != nil {
+			continue
+		}
+
+		gm.Waypoints = append(gm.Waypoints, Waypoint{
 			Name: name,
 			X:    x,
 			Y:    y,
