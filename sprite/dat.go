@@ -220,7 +220,7 @@ func readDatItem(r io.Reader, clientID uint16) (*DatItem, error) {
 }
 
 // readFlagData reads the data bytes for a .dat flag attribute.
-// Matches the proven PHP parser from htdocs/class.tibia.php (works with Wypas custom .dat).
+// Matches the proven PHP parser from htdocs/class.dat.php (works with Wypas custom .dat).
 // Uses OTClient flag numbering (not ObjectBuilder format 6).
 func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 	switch flag {

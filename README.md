@@ -1,6 +1,6 @@
 # wypas-lib
 
-Shared Go module for the Wypas Tibia project. Provides common packages used by `wypas-api`, `wypas-creator`, and other Go services.
+Shared Go module for the Wypas project. Provides common packages used by `wypas-api`, `wypas-creator`, and other Go services.
 
 ## Module
 
@@ -21,7 +21,7 @@ Go 1.22+
 | `otbm` | OTBM/OTB binary format parsers (map tiles, towns, items) |
 | `ratelimit` | In-memory IP rate limiter (sliding window) |
 | `response` | JSON response helpers (`JSON`, `Error`) |
-| `sprite` | Tibia.dat/spr parser, sprite cache, item/outfit rendering with color palette |
+| `sprite` | .dat/.spr appearance and sprite parser, cache, item/outfit rendering with color palette |
 | `worlds` | Game world list loader from JSON (`worlds.json`) |
 
 ## Install
