@@ -20,11 +20,12 @@ type TileArea struct {
 }
 
 type Tile struct {
-	OffsetX uint8
-	OffsetY uint8
-	Flags   uint32
-	HouseID uint32
-	Items   []MapItem
+	OffsetX   uint8
+	OffsetY   uint8
+	Flags     uint32
+	HouseID   uint32
+	Items     []uint16
+	RichItems []MapItem
 }
 
 type MapItem struct {
@@ -41,12 +42,10 @@ type MapItem struct {
 	Description string
 	Charges     uint16
 	RuneCharges uint8
-	Duration    uint32
-	DecayState  uint8
-	WrittenDate uint32
+	Duration     uint32
+	DecayState   uint8
+	WrittenDate  uint32
 	WrittenBy   string
-	SleeperGUID uint32
-	SleepStart  uint32
 	SubItems    []MapItem
 }
 

@@ -1,7 +1,6 @@
 package otw
 
 import (
-	"bytes"
 	"compress/gzip"
 	"encoding/binary"
 	"fmt"
@@ -44,41 +43,29 @@ func WriteFile(path string, wm *WorldMap) error {
 
 	payload := builder.FinishedBytes()
 
-	compressed, err := compressGzip(payload)
-	if err != nil {
-		return fmt.Errorf("otw: compress: %w", err)
-	}
-
-	var header [8]byte
-	copy(header[:4], magicOTW[:])
-	binary.LittleEndian.PutUint16(header[4:6], 1)
-	binary.LittleEndian.PutUint16(header[6:8], flagGzip)
-
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("otw: create file: %w", err)
 	}
 	defer f.Close()
 
+	var header [8]byte
+	copy(header[:4], magicOTW[:])
+	binary.LittleEndian.PutUint16(header[4:6], 1)
+	binary.LittleEndian.PutUint16(header[6:8], flagGzip)
 	if _, err := f.Write(header[:]); err != nil {
 		return fmt.Errorf("otw: write header: %w", err)
 	}
-	if _, err := f.Write(compressed); err != nil {
-		return fmt.Errorf("otw: write payload: %w", err)
-	}
-	return nil
-}
 
-func compressGzip(data []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	if _, err := w.Write(data); err != nil {
-		return nil, err
+	gz, _ := gzip.NewWriterLevel(f, gzip.BestCompression)
+	if _, err := gz.Write(payload); err != nil {
+		return fmt.Errorf("otw: write compressed: %w", err)
 	}
-	if err := w.Close(); err != nil {
-		return nil, err
+	if err := gz.Close(); err != nil {
+		return fmt.Errorf("otw: close gzip: %w", err)
 	}
-	return buf.Bytes(), nil
+
+	return nil
 }
 
 func prependVector(b *flatbuffers.Builder, offsets []flatbuffers.UOffsetT, startVec func(*flatbuffers.Builder, int) flatbuffers.UOffsetT) flatbuffers.UOffsetT {
@@ -117,54 +104,112 @@ func buildTileArea(b *flatbuffers.Builder, ta *TileArea) flatbuffers.UOffsetT {
 }
 
 func buildTile(b *flatbuffers.Builder, t *Tile) flatbuffers.UOffsetT {
-	itemOffsets := make([]flatbuffers.UOffsetT, len(t.Items))
-	for i := range t.Items {
-		itemOffsets[i] = buildMapItem(b, &t.Items[i])
+	var itemsVec, richVec flatbuffers.UOffsetT
+
+	if len(t.Items) > 0 {
+		fbOtw.TileStartItemsVector(b, len(t.Items))
+		for i := len(t.Items) - 1; i >= 0; i-- {
+			b.PrependUint16(t.Items[i])
+		}
+		itemsVec = b.EndVector(len(t.Items))
 	}
 
-	itemsVec := prependVector(b, itemOffsets, fbOtw.TileStartItemsVector)
+	if len(t.RichItems) > 0 {
+		richOffsets := make([]flatbuffers.UOffsetT, len(t.RichItems))
+		for i := range t.RichItems {
+			richOffsets[i] = buildMapItem(b, &t.RichItems[i])
+		}
+		richVec = prependVector(b, richOffsets, fbOtw.TileStartRichItemsVector)
+	}
 
 	fbOtw.TileStart(b)
 	fbOtw.TileAddOffsetX(b, t.OffsetX)
 	fbOtw.TileAddOffsetY(b, t.OffsetY)
-	fbOtw.TileAddFlags(b, t.Flags)
-	fbOtw.TileAddHouseId(b, t.HouseID)
-	fbOtw.TileAddItems(b, itemsVec)
+	if t.Flags != 0 {
+		fbOtw.TileAddFlags(b, t.Flags)
+	}
+	if t.HouseID != 0 {
+		fbOtw.TileAddHouseId(b, t.HouseID)
+	}
+	if itemsVec != 0 {
+		fbOtw.TileAddItems(b, itemsVec)
+	}
+	if richVec != 0 {
+		fbOtw.TileAddRichItems(b, richVec)
+	}
 	return fbOtw.TileEnd(b)
 }
 
 func buildMapItem(b *flatbuffers.Builder, mi *MapItem) flatbuffers.UOffsetT {
-	textOff := b.CreateString(mi.Text)
-	descOff := b.CreateString(mi.Description)
-	writtenByOff := b.CreateString(mi.WrittenBy)
-
-	subOffsets := make([]flatbuffers.UOffsetT, len(mi.SubItems))
-	for i := range mi.SubItems {
-		subOffsets[i] = buildMapItem(b, &mi.SubItems[i])
+	var textOff, descOff, writtenByOff flatbuffers.UOffsetT
+	if mi.Text != "" {
+		textOff = b.CreateString(mi.Text)
 	}
-	subVec := prependVector(b, subOffsets, fbOtw.MapItemStartSubItemsVector)
+	if mi.Description != "" {
+		descOff = b.CreateString(mi.Description)
+	}
+	if mi.WrittenBy != "" {
+		writtenByOff = b.CreateString(mi.WrittenBy)
+	}
+
+	var subVec flatbuffers.UOffsetT
+	if len(mi.SubItems) > 0 {
+		subOffsets := make([]flatbuffers.UOffsetT, len(mi.SubItems))
+		for i := range mi.SubItems {
+			subOffsets[i] = buildMapItem(b, &mi.SubItems[i])
+		}
+		subVec = prependVector(b, subOffsets, fbOtw.MapItemStartSubItemsVector)
+	}
 
 	fbOtw.MapItemStart(b)
 	fbOtw.MapItemAddServerId(b, mi.ServerID)
-	fbOtw.MapItemAddCount(b, mi.Count)
-	fbOtw.MapItemAddActionId(b, mi.ActionID)
-	fbOtw.MapItemAddUniqueId(b, mi.UniqueID)
-	fbOtw.MapItemAddTeleDestX(b, mi.TeleDestX)
-	fbOtw.MapItemAddTeleDestY(b, mi.TeleDestY)
-	fbOtw.MapItemAddTeleDestZ(b, mi.TeleDestZ)
-	fbOtw.MapItemAddDoorId(b, mi.DoorID)
-	fbOtw.MapItemAddDepotId(b, mi.DepotID)
-	fbOtw.MapItemAddText(b, textOff)
-	fbOtw.MapItemAddDescription(b, descOff)
-	fbOtw.MapItemAddCharges(b, mi.Charges)
-	fbOtw.MapItemAddRuneCharges(b, mi.RuneCharges)
-	fbOtw.MapItemAddDuration(b, mi.Duration)
-	fbOtw.MapItemAddDecayingState(b, mi.DecayState)
-	fbOtw.MapItemAddWrittenDate(b, mi.WrittenDate)
-	fbOtw.MapItemAddWrittenBy(b, writtenByOff)
-	fbOtw.MapItemAddSleeperGuid(b, mi.SleeperGUID)
-	fbOtw.MapItemAddSleepStart(b, mi.SleepStart)
-	fbOtw.MapItemAddSubItems(b, subVec)
+	if mi.Count != 0 {
+		fbOtw.MapItemAddCount(b, mi.Count)
+	}
+	if mi.ActionID != 0 {
+		fbOtw.MapItemAddActionId(b, mi.ActionID)
+	}
+	if mi.UniqueID != 0 {
+		fbOtw.MapItemAddUniqueId(b, mi.UniqueID)
+	}
+	if mi.TeleDestX != 0 || mi.TeleDestY != 0 || mi.TeleDestZ != 0 {
+		fbOtw.MapItemAddTeleDestX(b, mi.TeleDestX)
+		fbOtw.MapItemAddTeleDestY(b, mi.TeleDestY)
+		fbOtw.MapItemAddTeleDestZ(b, mi.TeleDestZ)
+	}
+	if mi.DoorID != 0 {
+		fbOtw.MapItemAddDoorId(b, mi.DoorID)
+	}
+	if mi.DepotID != 0 {
+		fbOtw.MapItemAddDepotId(b, mi.DepotID)
+	}
+	if textOff != 0 {
+		fbOtw.MapItemAddText(b, textOff)
+	}
+	if descOff != 0 {
+		fbOtw.MapItemAddDescription(b, descOff)
+	}
+	if mi.Charges != 0 {
+		fbOtw.MapItemAddCharges(b, mi.Charges)
+	}
+	if mi.RuneCharges != 0 {
+		fbOtw.MapItemAddRuneCharges(b, mi.RuneCharges)
+	}
+	if mi.Duration != 0 {
+		fbOtw.MapItemAddDuration(b, mi.Duration)
+	}
+	if mi.DecayState != 0 {
+		fbOtw.MapItemAddDecayingState(b, mi.DecayState)
+	}
+	if mi.WrittenDate != 0 {
+		fbOtw.MapItemAddWrittenDate(b, mi.WrittenDate)
+	}
+	if writtenByOff != 0 {
+		fbOtw.MapItemAddWrittenBy(b, writtenByOff)
+	}
+	if subVec != 0 {
+		fbOtw.MapItemAddSubItems(b, subVec)
+	}
 	return fbOtw.MapItemEnd(b)
 }
 

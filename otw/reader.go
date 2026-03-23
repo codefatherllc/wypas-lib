@@ -160,11 +160,17 @@ func convertTile(fb *fbOtw.Tile) Tile {
 		HouseID: fb.HouseId(),
 	}
 	if n := fb.ItemsLength(); n > 0 {
-		t.Items = make([]MapItem, n)
+		t.Items = make([]uint16, n)
+		for i := 0; i < n; i++ {
+			t.Items[i] = fb.Items(i)
+		}
+	}
+	if n := fb.RichItemsLength(); n > 0 {
+		t.RichItems = make([]MapItem, n)
 		var fbI fbOtw.MapItem
 		for i := 0; i < n; i++ {
-			if fb.Items(&fbI, i) {
-				t.Items[i] = convertMapItem(&fbI)
+			if fb.RichItems(&fbI, i) {
+				t.RichItems[i] = convertMapItem(&fbI)
 			}
 		}
 	}
@@ -190,8 +196,6 @@ func convertMapItem(fb *fbOtw.MapItem) MapItem {
 		DecayState:  fb.DecayingState(),
 		WrittenDate: fb.WrittenDate(),
 		WrittenBy:   string(fb.WrittenBy()),
-		SleeperGUID: fb.SleeperGuid(),
-		SleepStart:  fb.SleepStart(),
 	}
 	if n := fb.SubItemsLength(); n > 0 {
 		mi.SubItems = make([]MapItem, n)

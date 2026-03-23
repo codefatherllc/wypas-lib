@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	fbItems "github.com/codefatherllc/wypas-proto/items"
+	fbOti "github.com/codefatherllc/wypas-proto/oti"
 )
 
 var magicOTI = [4]byte{'O', 'T', 'I', 0}
@@ -40,7 +40,7 @@ func ReadFile(path string) (*ItemDatabase, error) {
 		}
 	}
 
-	fb := fbItems.GetRootAsItemDatabase(payload, 0)
+	fb := fbOti.GetRootAsItemDatabase(payload, 0)
 	return convertItemDatabase(fb), nil
 }
 
@@ -53,7 +53,7 @@ func decompressGzip(data []byte) ([]byte, error) {
 	return io.ReadAll(r)
 }
 
-func convertItemDatabase(fb *fbItems.ItemDatabase) *ItemDatabase {
+func convertItemDatabase(fb *fbOti.ItemDatabase) *ItemDatabase {
 	db := &ItemDatabase{
 		Version: fb.Version(),
 		Build:   string(fb.Build()),
@@ -62,7 +62,7 @@ func convertItemDatabase(fb *fbItems.ItemDatabase) *ItemDatabase {
 	n := fb.ItemsLength()
 	if n > 0 {
 		db.Items = make([]ItemType, n)
-		var fbItem fbItems.ItemType
+		var fbItem fbOti.ItemType
 		for i := 0; i < n; i++ {
 			if fb.Items(&fbItem, i) {
 				db.Items[i] = convertItemType(&fbItem)
@@ -72,7 +72,7 @@ func convertItemDatabase(fb *fbItems.ItemDatabase) *ItemDatabase {
 	return db
 }
 
-func convertItemType(fb *fbItems.ItemType) ItemType {
+func convertItemType(fb *fbOti.ItemType) ItemType {
 	it := ItemType{
 		ServerID:           fb.ServerId(),
 		ClientID:           fb.ClientId(),
@@ -174,7 +174,7 @@ func convertItemType(fb *fbItems.ItemType) ItemType {
 	return it
 }
 
-func convertAbilities(fb *fbItems.Abilities) *Abilities {
+func convertAbilities(fb *fbOti.Abilities) *Abilities {
 	ab := &Abilities{
 		Speed:                  fb.Speed(),
 		HealthGain:             fb.HealthGain(),
@@ -246,7 +246,7 @@ func convertAbilities(fb *fbItems.Abilities) *Abilities {
 	return ab
 }
 
-func convertCombatValues(fb *fbItems.CombatValues) CombatValues {
+func convertCombatValues(fb *fbOti.CombatValues) CombatValues {
 	return CombatValues{
 		Physical:  fb.Physical(),
 		Energy:    fb.Energy(),
@@ -263,14 +263,14 @@ func convertCombatValues(fb *fbItems.CombatValues) CombatValues {
 	}
 }
 
-func convertField(fb *fbItems.FieldDefinition) *FieldDefinition {
+func convertField(fb *fbOti.FieldDefinition) *FieldDefinition {
 	fd := &FieldDefinition{
 		CombatType: uint8(fb.CombatType()),
 	}
 	n := fb.DamagesLength()
 	if n > 0 {
 		fd.Damages = make([]FieldDamage, n)
-		var fbDmg fbItems.FieldDamage
+		var fbDmg fbOti.FieldDamage
 		for i := 0; i < n; i++ {
 			if fb.Damages(&fbDmg, i) {
 				fd.Damages[i] = FieldDamage{
