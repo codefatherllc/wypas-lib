@@ -78,7 +78,7 @@ type ItemType struct {
 	CanWriteText       bool            `db:"can_write_text"`
 	CanReadText        bool            `db:"can_read_text"`
 	StopTime           bool            `db:"stop_time"`
-	Floorchange        uint8           `db:"floorchange"`
+	Floorchange        uint16          `db:"floorchange"`
 	BedPartnerDir      uint8           `db:"bed_partner_dir"`
 	MaleTransformTo    uint16          `db:"male_transform_to"`
 	MaleLooktype       uint16          `db:"male_looktype"`

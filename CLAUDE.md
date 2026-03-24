@@ -17,7 +17,9 @@ No binary output. This is a library module consumed via `go get`.
 | `db` | `Open(dsn, maxOpen, maxIdle)` — MySQL pool with 5min conn lifetime |
 | `jwt` | `Claims`, `ParseToken`, `SignToken`, `Middleware`, `RequireAdmin`, `GetClaims` |
 | `middleware` | `CORS(origins...)` — Access-Control headers + OPTIONS preflight |
-| `otbm` | `ParseOTBM` — binary OTBM/OTB parser (tiles, towns, items, waypoints) |
+| `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.) |
+| `otb` | Legacy file loading (OTB+XML→`gamedata.ItemType`, OTBM+XMLs→gamedata world types). Used by otconv, creator demo, api demo. |
+| `otbm` | Raw binary OTBM/OTB parser (internal — `otb/` is the high-level loader returning `gamedata.*` types) |
 | `ratelimit` | `New(max, window)` → `Limiter.Allow(ip)` — in-memory sliding window |
 | `response` | `JSON(w, status, data)`, `Error(w, status, msg)` |
 | `sprite` | `Cache` (dat+spr loader, PNG render), `DatFile`, `SpriteFile`, outfit color palette |

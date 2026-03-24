@@ -46,15 +46,15 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 	}
 	defer rows.Close()
 
-	spawnMap := make(map[uint32]*Spawn)
+	spawnMap := make(map[uint32]int)
 	var spawns []Spawn
 	for rows.Next() {
 		var s Spawn
 		if err := rows.Scan(&s.ID, &s.CenterX, &s.CenterY, &s.CenterZ, &s.Radius); err != nil {
 			return nil, err
 		}
+		spawnMap[s.ID] = len(spawns)
 		spawns = append(spawns, s)
-		spawnMap[s.ID] = &spawns[len(spawns)-1]
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -71,8 +71,8 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 		if err := erows.Scan(&c.ID, &c.SpawnID, &c.Name, &c.Type, &c.OffsetX, &c.OffsetY, &c.OffsetZ, &c.SpawnTime); err != nil {
 			return nil, err
 		}
-		if s, ok := spawnMap[c.SpawnID]; ok {
-			s.Creatures = append(s.Creatures, c)
+		if idx, ok := spawnMap[c.SpawnID]; ok {
+			spawns[idx].Creatures = append(spawns[idx].Creatures, c)
 		}
 	}
 	return spawns, erows.Err()

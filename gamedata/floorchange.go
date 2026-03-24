@@ -1,16 +1,17 @@
 package gamedata
 
 const (
-	FloorchangeDown    uint8 = 1 << 0
-	FloorchangeNorth   uint8 = 1 << 1
-	FloorchangeSouth   uint8 = 1 << 2
-	FloorchangeEast    uint8 = 1 << 3
-	FloorchangeWest    uint8 = 1 << 4
-	FloorchangeNorthEx uint8 = 1 << 5
-	FloorchangeSouthEx uint8 = 1 << 6
-	FloorchangeWestEx  uint8 = 1 << 7
+	FloorchangeDown    uint16 = 1 << 0
+	FloorchangeNorth   uint16 = 1 << 1
+	FloorchangeSouth   uint16 = 1 << 2
+	FloorchangeEast    uint16 = 1 << 3
+	FloorchangeWest    uint16 = 1 << 4
+	FloorchangeNorthEx uint16 = 1 << 5
+	FloorchangeSouthEx uint16 = 1 << 6
+	FloorchangeEastEx  uint16 = 1 << 7
+	FloorchangeWestEx  uint16 = 1 << 8
 )
 
-func HasFloorchange(flags, dir uint8) bool {
+func HasFloorchange(flags, dir uint16) bool {
 	return flags&dir != 0
 }
