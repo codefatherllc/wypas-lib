@@ -18,7 +18,9 @@ Go 1.22+
 | `db` | MySQL connection pool with configured limits and lifetime |
 | `jwt` | JWT (HS256) parsing, signing, middleware, admin guard |
 | `middleware` | CORS middleware for `net/http` |
-| `otbm` | OTBM/OTB binary format parsers (map tiles, towns, items) |
+| `gamedata` | DB-backed item types and world data (structs + store functions) |
+| `otb` | Legacy file loading (OTB+XML to gamedata.ItemType, OTBM+XMLs to gamedata world types) |
+| `otbm` | Raw OTBM/OTB binary format parser (internal — `otb` is the high-level loader) |
 | `ratelimit` | In-memory IP rate limiter (sliding window) |
 | `response` | JSON response helpers (`JSON`, `Error`) |
 | `sprite` | .dat/.spr appearance and sprite parser, cache, item/outfit rendering with color palette |
