@@ -1,4 +1,4 @@
-package otb
+package otbm
 
 import (
 	"encoding/binary"
@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/codefatherllc/wypas-lib/gamedata"
-	"github.com/codefatherllc/wypas-lib/otbm"
 )
 
 type WorldData struct {
@@ -43,9 +42,9 @@ func LoadWorld(otbmPath string, opts ...WorldOption) (*WorldData, error) {
 		o(&cfg)
 	}
 
-	gm, err := otbm.ParseOTBM(otbmPath)
+	gm, err := ParseOTBM(otbmPath)
 	if err != nil {
-		return nil, fmt.Errorf("otb: parse otbm: %w", err)
+		return nil, fmt.Errorf("otbm: parse: %w", err)
 	}
 
 	wd := &WorldData{}
@@ -73,7 +72,7 @@ func LoadWorld(otbmPath string, opts ...WorldOption) (*WorldData, error) {
 	return wd, nil
 }
 
-func convertTiles(gm *otbm.GameMap) []gamedata.MapTile {
+func convertTiles(gm *GameMap) []gamedata.MapTile {
 	tiles := make([]gamedata.MapTile, 0, len(gm.Tiles))
 	for key, tile := range gm.Tiles {
 		x := uint16(key >> 24)
@@ -87,10 +86,10 @@ func convertTiles(gm *otbm.GameMap) []gamedata.MapTile {
 			items = items[1:]
 		}
 
-		var itemsBlob []uint16
+		var itemsCopy []uint16
 		if len(items) > 0 {
-			itemsBlob = make([]uint16, len(items))
-			copy(itemsBlob, items)
+			itemsCopy = make([]uint16, len(items))
+			copy(itemsCopy, items)
 		}
 
 		tiles = append(tiles, gamedata.MapTile{
@@ -100,13 +99,13 @@ func convertTiles(gm *otbm.GameMap) []gamedata.MapTile {
 			GroundID: groundID,
 			Flags:    tile.Flags,
 			HouseID:  tile.HouseID,
-			Items:    itemsBlob,
+			Items:    itemsCopy,
 		})
 	}
 	return tiles
 }
 
-func convertTowns(towns []otbm.Town) []gamedata.Town {
+func convertTowns(towns []Town) []gamedata.Town {
 	out := make([]gamedata.Town, len(towns))
 	for i, t := range towns {
 		out[i] = gamedata.Town{
@@ -120,7 +119,7 @@ func convertTowns(towns []otbm.Town) []gamedata.Town {
 	return out
 }
 
-func convertWaypoints(wps []otbm.Waypoint) []gamedata.Waypoint {
+func convertWaypoints(wps []Waypoint) []gamedata.Waypoint {
 	out := make([]gamedata.Waypoint, len(wps))
 	for i, w := range wps {
 		out[i] = gamedata.Waypoint{
@@ -136,11 +135,11 @@ func convertWaypoints(wps []otbm.Waypoint) []gamedata.Waypoint {
 func loadSpawns(path string) ([]gamedata.Spawn, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("otb: read spawns %s: %w", path, err)
+		return nil, fmt.Errorf("otbm: read spawns %s: %w", path, err)
 	}
 	var xs xmlSpawns
 	if err := xml.Unmarshal(data, &xs); err != nil {
-		return nil, fmt.Errorf("otb: parse spawns xml: %w", err)
+		return nil, fmt.Errorf("otbm: parse spawns: %w", err)
 	}
 
 	spawns := make([]gamedata.Spawn, 0, len(xs.Spawns))
@@ -151,29 +150,20 @@ func loadSpawns(path string) ([]gamedata.Spawn, error) {
 			CenterZ: s.CenterZ,
 			Radius:  s.Radius,
 		}
-
 		for _, m := range s.Monsters {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
-				Name:      m.Name,
-				Type:      "monster",
-				OffsetX:   m.X,
-				OffsetY:   m.Y,
-				OffsetZ:   m.Z,
+				Name: m.Name, Type: "monster",
+				OffsetX: m.X, OffsetY: m.Y, OffsetZ: m.Z,
 				SpawnTime: m.SpawnTime,
 			})
 		}
-
 		for _, n := range s.NPCs {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
-				Name:      n.Name,
-				Type:      "npc",
-				OffsetX:   n.X,
-				OffsetY:   n.Y,
-				OffsetZ:   n.Z,
+				Name: n.Name, Type: "npc",
+				OffsetX: n.X, OffsetY: n.Y, OffsetZ: n.Z,
 				SpawnTime: n.SpawnTime,
 			})
 		}
-
 		spawns = append(spawns, gs)
 	}
 	return spawns, nil
@@ -182,30 +172,24 @@ func loadSpawns(path string) ([]gamedata.Spawn, error) {
 func loadHouses(path string) ([]gamedata.House, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("otb: read houses %s: %w", path, err)
+		return nil, fmt.Errorf("otbm: read houses %s: %w", path, err)
 	}
 	var xh xmlHouses
 	if err := xml.Unmarshal(data, &xh); err != nil {
-		return nil, fmt.Errorf("otb: parse houses xml: %w", err)
+		return nil, fmt.Errorf("otbm: parse houses: %w", err)
 	}
 
 	houses := make([]gamedata.House, len(xh.Houses))
 	for i, h := range xh.Houses {
 		houses[i] = gamedata.House{
-			ID:     h.ID,
-			Name:   h.Name,
-			EntryX: h.EntryX,
-			EntryY: h.EntryY,
-			EntryZ: h.EntryZ,
-			Rent:   h.Rent,
-			TownID: h.TownID,
-			Size:   h.Size,
+			ID: h.ID, Name: h.Name,
+			EntryX: h.EntryX, EntryY: h.EntryY, EntryZ: h.EntryZ,
+			Rent: h.Rent, TownID: h.TownID, Size: h.Size,
 		}
 	}
 	return houses, nil
 }
 
-// EncodeItemsBlob encodes a slice of item server IDs to a binary blob (little-endian uint16 pairs).
 func EncodeItemsBlob(items []uint16) []byte {
 	if len(items) == 0 {
 		return nil
