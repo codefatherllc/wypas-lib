@@ -22,6 +22,7 @@ type xmlMonster struct {
 	Y         int16  `xml:"y,attr"`
 	Z         int8   `xml:"z,attr"`
 	SpawnTime uint32 `xml:"spawntime,attr"`
+	Direction uint8  `xml:"direction,attr,omitempty"`
 }
 
 type xmlNPC struct {
@@ -30,6 +31,7 @@ type xmlNPC struct {
 	Y         int16  `xml:"y,attr"`
 	Z         int8   `xml:"z,attr"`
 	SpawnTime uint32 `xml:"spawntime,attr"`
+	Direction uint8  `xml:"direction,attr,omitempty"`
 }
 
 type xmlHouses struct {
@@ -38,12 +40,13 @@ type xmlHouses struct {
 }
 
 type xmlHouse struct {
-	ID     uint32 `xml:"houseid,attr"`
-	Name   string `xml:"name,attr"`
-	EntryX uint16 `xml:"entryx,attr"`
-	EntryY uint16 `xml:"entryy,attr"`
-	EntryZ uint8  `xml:"entryz,attr"`
-	Rent   uint32 `xml:"rent,attr"`
-	TownID uint32 `xml:"townid,attr"`
-	Size   uint16 `xml:"size,attr"`
+	ID        uint32 `xml:"houseid,attr"`
+	Name      string `xml:"name,attr"`
+	EntryX    uint16 `xml:"entryx,attr"`
+	EntryY    uint16 `xml:"entryy,attr"`
+	EntryZ    uint8  `xml:"entryz,attr"`
+	Rent      uint32 `xml:"rent,attr"`
+	TownID    uint32 `xml:"townid,attr"`
+	Size      uint16 `xml:"size,attr"`
+	Guildhall bool   `xml:"guildhall,attr,omitempty"`
 }

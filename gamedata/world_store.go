@@ -60,7 +60,7 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 		return nil, err
 	}
 
-	erows, err := db.Query("SELECT id, spawn_id, name, type, offset_x, offset_y, offset_z, spawntime FROM map_spawn_entries")
+	erows, err := db.Query("SELECT id, spawn_id, name, type, offset_x, offset_y, offset_z, spawntime, direction FROM map_spawn_entries")
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 
 	for erows.Next() {
 		var c SpawnCreature
-		if err := erows.Scan(&c.ID, &c.SpawnID, &c.Name, &c.Type, &c.OffsetX, &c.OffsetY, &c.OffsetZ, &c.SpawnTime); err != nil {
+		if err := erows.Scan(&c.ID, &c.SpawnID, &c.Name, &c.Type, &c.OffsetX, &c.OffsetY, &c.OffsetZ, &c.SpawnTime, &c.Direction); err != nil {
 			return nil, err
 		}
 		if idx, ok := spawnMap[c.SpawnID]; ok {
@@ -115,7 +115,7 @@ func LoadWaypoints(db *sql.DB) ([]Waypoint, error) {
 }
 
 func LoadHouses(db *sql.DB) ([]House, error) {
-	rows, err := db.Query("SELECT id, name, entry_x, entry_y, entry_z, rent, town_id, size FROM map_houses")
+	rows, err := db.Query("SELECT id, name, entry_x, entry_y, entry_z, rent, town_id, size, guildhall FROM map_houses")
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func LoadHouses(db *sql.DB) ([]House, error) {
 	var houses []House
 	for rows.Next() {
 		var h House
-		if err := rows.Scan(&h.ID, &h.Name, &h.EntryX, &h.EntryY, &h.EntryZ, &h.Rent, &h.TownID, &h.Size); err != nil {
+		if err := rows.Scan(&h.ID, &h.Name, &h.EntryX, &h.EntryY, &h.EntryZ, &h.Rent, &h.TownID, &h.Size, &h.Guildhall); err != nil {
 			return nil, err
 		}
 		houses = append(houses, h)

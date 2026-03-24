@@ -59,6 +59,7 @@ type SpawnCreature struct {
 	OffsetY   int16  `db:"offset_y"`
 	OffsetZ   int8   `db:"offset_z"`
 	SpawnTime uint32 `db:"spawntime"`
+	Direction uint8  `db:"direction"`
 }
 
 type Town struct {
@@ -77,12 +78,13 @@ type Waypoint struct {
 }
 
 type House struct {
-	ID     uint32 `db:"id"`
-	Name   string `db:"name"`
-	EntryX uint16 `db:"entry_x"`
-	EntryY uint16 `db:"entry_y"`
-	EntryZ uint8  `db:"entry_z"`
-	Rent   uint32 `db:"rent"`
-	TownID uint32 `db:"town_id"`
-	Size   uint16 `db:"size"`
+	ID        uint32 `db:"id"`
+	Name      string `db:"name"`
+	EntryX    uint16 `db:"entry_x"`
+	EntryY    uint16 `db:"entry_y"`
+	EntryZ    uint8  `db:"entry_z"`
+	Rent      uint32 `db:"rent"`
+	TownID    uint32 `db:"town_id"`
+	Size      uint16 `db:"size"`
+	Guildhall bool   `db:"guildhall"`
 }

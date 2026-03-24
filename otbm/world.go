@@ -154,14 +154,16 @@ func loadSpawns(path string) ([]gamedata.Spawn, error) {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
 				Name: m.Name, Type: "monster",
 				OffsetX: m.X, OffsetY: m.Y, OffsetZ: m.Z,
-				SpawnTime: m.SpawnTime,
+				SpawnTime:  m.SpawnTime,
+				Direction:  m.Direction,
 			})
 		}
 		for _, n := range s.NPCs {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
 				Name: n.Name, Type: "npc",
 				OffsetX: n.X, OffsetY: n.Y, OffsetZ: n.Z,
-				SpawnTime: n.SpawnTime,
+				SpawnTime:  n.SpawnTime,
+				Direction:  n.Direction,
 			})
 		}
 		spawns = append(spawns, gs)
@@ -185,6 +187,7 @@ func loadHouses(path string) ([]gamedata.House, error) {
 			ID: h.ID, Name: h.Name,
 			EntryX: h.EntryX, EntryY: h.EntryY, EntryZ: h.EntryZ,
 			Rent: h.Rent, TownID: h.TownID, Size: h.Size,
+			Guildhall: h.Guildhall,
 		}
 	}
 	return houses, nil

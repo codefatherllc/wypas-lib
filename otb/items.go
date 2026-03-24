@@ -607,6 +607,25 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 		case "absorbpercentundefined":
 			ensureAbsorbMap(ensureAbilities())[gamedata.CombatUndefined] = int16(atoi(val))
 
+		case "absorbpercentelements":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.Absorb == nil {
+				a.Absorb = make(map[int]int16)
+			}
+			for _, ct := range elementCombatTypes {
+				a.Absorb[ct] += v
+			}
+		case "absorbpercentmagic":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.Absorb == nil {
+				a.Absorb = make(map[int]int16)
+			}
+			for _, ct := range magicCombatTypes {
+				a.Absorb[ct] += v
+			}
+
 		// Field absorb
 		case "fieldabsorbpercentenergy":
 			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatEnergy] = int16(atoi(val))
@@ -649,6 +668,24 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			for _, ct := range allCombatTypes {
 				a.ReflectPercent[ct] = v
 			}
+		case "reflectpercentelements":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.ReflectPercent == nil {
+				a.ReflectPercent = make(map[int]int16)
+			}
+			for _, ct := range elementCombatTypes {
+				a.ReflectPercent[ct] += v
+			}
+		case "reflectpercentmagic":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.ReflectPercent == nil {
+				a.ReflectPercent = make(map[int]int16)
+			}
+			for _, ct := range magicCombatTypes {
+				a.ReflectPercent[ct] += v
+			}
 
 		// Reflect chance
 		case "reflectchancephysical":
@@ -683,6 +720,24 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			}
 			for _, ct := range allCombatTypes {
 				a.ReflectChance[ct] = v
+			}
+		case "reflectchanceelements":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.ReflectChance == nil {
+				a.ReflectChance = make(map[int]int16)
+			}
+			for _, ct := range elementCombatTypes {
+				a.ReflectChance[ct] += v
+			}
+		case "reflectchancemagic":
+			v := int16(atoi(val))
+			a := ensureAbilities()
+			if a.ReflectChance == nil {
+				a.ReflectChance = make(map[int]int16)
+			}
+			for _, ct := range magicCombatTypes {
+				a.ReflectChance[ct] += v
 			}
 
 		// Element damage
@@ -730,6 +785,23 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			a := ensureAbilities()
 			a.ElementType = gamedata.CombatUndefined
 			a.ElementDamage = int16(atoi(val))
+
+		case "field":
+			ab := ensureAbilities()
+			ab.FieldCombatType = fieldCombatType(strings.ToLower(val))
+			for _, sub := range a.Children {
+				subKey := strings.ToLower(sub.Key)
+				switch subKey {
+				case "ticks":
+					ab.FieldTicks = int32(atoi(sub.Value))
+				case "count":
+					ab.FieldCount = int32(atoi(sub.Value))
+				case "start":
+					ab.FieldStart = int32(atoi(sub.Value))
+				case "damage":
+					ab.FieldDamage = int32(atoi(sub.Value))
+				}
+			}
 
 		// Suppress conditions
 		case "suppresspoison", "suppressearth":
@@ -791,6 +863,15 @@ var allCombatTypes = []int{
 	gamedata.CombatPhysical, gamedata.CombatEnergy, gamedata.CombatEarth,
 	gamedata.CombatFire, gamedata.CombatUndefined, gamedata.CombatLifeDrain,
 	gamedata.CombatManaDrain, gamedata.CombatHealing, gamedata.CombatDrown,
+	gamedata.CombatIce, gamedata.CombatHoly, gamedata.CombatDeath,
+}
+
+var elementCombatTypes = []int{
+	gamedata.CombatEnergy, gamedata.CombatFire, gamedata.CombatEarth, gamedata.CombatIce,
+}
+
+var magicCombatTypes = []int{
+	gamedata.CombatEnergy, gamedata.CombatFire, gamedata.CombatEarth,
 	gamedata.CombatIce, gamedata.CombatHoly, gamedata.CombatDeath,
 }
 
@@ -930,6 +1011,26 @@ func corpseTypeVal(s string) int {
 		return 4
 	case "energy":
 		return 5
+	}
+	return 0
+}
+
+func fieldCombatType(s string) int {
+	switch s {
+	case "fire":
+		return gamedata.CombatFire
+	case "energy":
+		return gamedata.CombatEnergy
+	case "poison", "earth":
+		return gamedata.CombatEarth
+	case "drown":
+		return gamedata.CombatDrown
+	case "ice":
+		return gamedata.CombatIce
+	case "holy":
+		return gamedata.CombatHoly
+	case "death":
+		return gamedata.CombatDeath
 	}
 	return 0
 }

@@ -15,6 +15,7 @@ type xmlItem struct {
 }
 
 type xmlAttr struct {
-	Key   string `xml:"key,attr"`
-	Value string `xml:"value,attr"`
+	Key      string    `xml:"key,attr"`
+	Value    string    `xml:"value,attr"`
+	Children []xmlAttr `xml:"attribute"`
 }

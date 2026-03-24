@@ -84,6 +84,7 @@ type ItemType struct {
 	MaleLooktype       uint16          `db:"male_looktype"`
 	FemaleTransformTo  uint16          `db:"female_transform_to"`
 	FemaleLooktype     uint16          `db:"female_looktype"`
+	Cache              bool            `db:"cache"`
 	Abilities          NullableAbilities `db:"abilities"`
 }
 
@@ -139,6 +140,12 @@ type Abilities struct {
 	ElementDamage int16 `json:"elementDamage,omitempty"`
 
 	ConditionSuppressions int32 `json:"conditionSuppressions,omitempty"`
+
+	FieldCombatType int   `json:"fieldCombatType,omitempty"`
+	FieldTicks      int32 `json:"fieldTicks,omitempty"`
+	FieldCount      int32 `json:"fieldCount,omitempty"`
+	FieldStart      int32 `json:"fieldStart,omitempty"`
+	FieldDamage     int32 `json:"fieldDamage,omitempty"`
 }
 
 // NullableAbilities wraps Abilities for nullable JSON column scanning.
