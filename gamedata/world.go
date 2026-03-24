@@ -6,14 +6,37 @@ import (
 	"fmt"
 )
 
+type RichItem struct {
+	ServerID    uint16
+	ActionID    uint16
+	UniqueID    uint16
+	TeleDestX   uint16
+	TeleDestY   uint16
+	TeleDestZ   uint8
+	DoorID      uint8
+	DepotID     uint16
+	Text        string
+	Description string
+	Charges     uint16
+	RuneCharges uint8
+	Count       uint8
+	Duration    uint32
+	WrittenDate uint32
+	WrittenBy   string
+	SleeperGUID uint32
+	SleepStart  uint32
+	SubItems    []RichItem
+}
+
 type MapTile struct {
-	X        uint16   `db:"x"`
-	Y        uint16   `db:"y"`
-	Z        uint8    `db:"z"`
-	GroundID uint16   `db:"ground_id"`
-	Flags    uint32   `db:"flags"`
-	HouseID  uint32   `db:"house_id"`
-	Items    []uint16 // decoded from MEDIUMBLOB
+	X         uint16     `db:"x"`
+	Y         uint16     `db:"y"`
+	Z         uint8      `db:"z"`
+	GroundID  uint16     `db:"ground_id"`
+	Flags     uint32     `db:"flags"`
+	HouseID   uint32     `db:"house_id"`
+	Items     []uint16   // decoded from MEDIUMBLOB
+	RichItems []RichItem // items with attributes
 }
 
 func DecodeItems(blob []byte) ([]uint16, error) {

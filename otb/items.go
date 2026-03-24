@@ -34,6 +34,7 @@ const (
 	flagHorizontal      = 1 << 18
 	flagAllowDistRead   = 1 << 20
 	flagLookThrough     = 1 << 23
+	flagAnimation       = 1 << 24
 	flagWalkStack       = 1 << 25
 )
 
@@ -158,6 +159,7 @@ func LoadItems(otbPath, xmlPath string) ([]gamedata.ItemType, error) {
 		}
 
 		applyOTBFlags(&it, oi.flags)
+		applyOTBGroupType(&it, oi.group)
 
 		if xi, ok := xmlMap[oi.serverID]; ok {
 			it.Name = xi.Name
@@ -169,7 +171,29 @@ func LoadItems(otbPath, xmlPath string) ([]gamedata.ItemType, error) {
 		result = append(result, it)
 	}
 
+	for i := range result {
+		if result[i].Plural == "" && result[i].ShowCount && result[i].Name != "" {
+			result[i].Plural = result[i].Name + "s"
+		}
+	}
+
 	return result, nil
+}
+
+// applyOTBGroupType maps OTB item groups to ItemTypes_t values.
+// ItemGroup enum: CONTAINER=2, TELEPORT=7, MAGICFIELD=8, DOOR=13
+// ItemTypes_t enum: DEPOT=1, MAILBOX=2, TRASHHOLDER=3, CONTAINER=4, DOOR=5, MAGICFIELD=6, TELEPORT=7
+func applyOTBGroupType(it *gamedata.ItemType, group uint8) {
+	switch group {
+	case 2: // ITEM_GROUP_CONTAINER
+		it.ItemTypeVal = 4 // ITEM_TYPE_CONTAINER
+	case 7: // ITEM_GROUP_TELEPORT
+		it.ItemTypeVal = 7 // ITEM_TYPE_TELEPORT
+	case 8: // ITEM_GROUP_MAGICFIELD
+		it.ItemTypeVal = 6 // ITEM_TYPE_MAGICFIELD
+	case 13: // ITEM_GROUP_DOOR
+		it.ItemTypeVal = 5 // ITEM_TYPE_DOOR
+	}
 }
 
 func parseOTBFull(path string) ([]otbItem, error) {
@@ -294,11 +318,19 @@ func applyOTBFlags(it *gamedata.ItemType, flags uint32) {
 	it.BlockSolid = flags&flagBlockSolid != 0
 	it.BlockProjectile = flags&flagBlockProjectile != 0
 	it.BlockPathFind = flags&flagBlockPathFind != 0
+	it.HasHeight = flags&flagHasHeight != 0
+	it.Usable = flags&flagUsable != 0
 	it.Pickupable = flags&flagPickupable != 0
+	it.Stackable = flags&flagStackable != 0
+	it.AlwaysOnTop = flags&flagAlwaysOnTop != 0
+	it.Rotable = flags&flagRotable != 0
+	it.IsHangable = flags&flagHangable != 0
 	it.IsVertical = flags&flagVertical != 0
 	it.IsHorizontal = flags&flagHorizontal != 0
 	it.AllowDistRead = flags&flagAllowDistRead != 0
 	it.CanReadText = flags&flagReadable != 0
+	it.LookThrough = flags&flagLookThrough != 0
+	it.IsAnimation = flags&flagAnimation != 0
 	it.WalkStack = flags&flagWalkStack != 0
 
 	if flags&flagMovable != 0 {
@@ -375,6 +407,10 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			it.RotateTo = uint16(atoi(val))
 		case "containersize":
 			it.ContainerSize = uint8(atoi(val))
+			if it.ItemGroup == 0 {
+				it.ItemGroup = 2  // ITEM_GROUP_CONTAINER
+				it.ItemTypeVal = 4 // ITEM_TYPE_CONTAINER
+			}
 		case "charges":
 			it.Charges = uint32(atoi(val))
 		case "decayto":
@@ -394,15 +430,36 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 		case "transformuseto", "transformto", "onuseto":
 			it.TransformUseTo = uint16(atoi(val))
 		case "maxhitchance":
-			it.MaxHitChance = int8(atoi(val))
+			v := atoi(val)
+			if v < 0 {
+				v = 0
+			}
+			if v > 100 {
+				v = 100
+			}
+			it.MaxHitChance = int8(v)
 		case "hitchance":
-			it.HitChance = int8(atoi(val))
+			v := atoi(val)
+			if v < -100 {
+				v = -100
+			}
+			if v > 100 {
+				v = 100
+			}
+			it.HitChance = int8(v)
 		case "worth":
 			it.Worth = uint32(atoi(val))
 		case "shootrange", "range":
 			it.ShootRange = uint8(atoi(val))
 		case "breakchance":
-			it.BreakChance = int8(atoi(val))
+			v := atoi(val)
+			if v < 0 {
+				v = 0
+			}
+			if v > 100 {
+				v = 100
+			}
+			it.BreakChance = int8(v)
 		case "leveldoor":
 			it.LevelDoor = uint32(atoi(val))
 		case "wareid":
@@ -415,8 +472,42 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			it.AttackSpeed = uint32(atoi(val))
 		case "extraattack", "extraatk":
 			it.ExtraAttack = int16(atoi(val))
+		case "type":
+			switch strings.ToLower(val) {
+			case "depot":
+				it.ItemTypeVal = 1
+			case "mailbox":
+				it.ItemTypeVal = 2
+			case "trashholder":
+				it.ItemTypeVal = 3
+			case "container":
+				it.ItemTypeVal = 4
+			case "door":
+				it.ItemTypeVal = 5
+			case "magicfield":
+				it.ItemTypeVal = 6
+			case "teleport":
+				it.ItemTypeVal = 7
+			case "bed":
+				it.ItemTypeVal = 8
+			case "key":
+				it.ItemTypeVal = 9
+			case "rune":
+				it.ItemTypeVal = 10
+			}
+		case "clientid":
+			it.ClientID = uint16(atoi(val))
+			if it.ItemGroup == 14 { // un-deprecate
+				it.ItemGroup = 0
+			}
 		case "description":
 			it.Description = val
+		case "text":
+			it.Text = val
+		case "writer", "author":
+			it.Writer = val
+		case "date":
+			it.Date = int32(atoi(val))
 		case "runespellname":
 			it.RuneSpellName = val
 		case "minimapcolor":
@@ -437,6 +528,8 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			it.SpecialDoor = parseBool(val)
 		case "closingdoor":
 			it.ClosingDoor = parseBool(val)
+		case "cache":
+			it.Cache = val != "0"
 		case "blocksolid", "blocking":
 			it.BlockSolid = val != "0"
 		case "blockprojectile":
@@ -486,7 +579,7 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			it.MagicEffect = uint8(magicEffectVal(strings.ToLower(val)))
 
 		case "slottype":
-			sp, wp := slotTypeVals(strings.ToLower(val))
+			sp, wp := slotTypeVals(strings.ToLower(val), it.SlotPosition)
 			it.SlotPosition = sp
 			it.WieldPosition = wp
 
@@ -496,11 +589,15 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			it.FluidSource = uint8(fluidTypeVal(strings.ToLower(val)))
 
 		case "partnerdirection":
-			it.BedPartnerDir = uint8(atoi(val))
+			it.BedPartnerDir = directionFromString(strings.ToLower(val))
 		case "maletransformto":
 			it.MaleTransformTo = uint16(atoi(val))
+			// Cross-reference (setting FemaleTransformTo on the target item)
+			// is done by the server's loadFromDB second pass.
 		case "femaletransformto":
 			it.FemaleTransformTo = uint16(atoi(val))
+			// Cross-reference (setting MaleTransformTo on the target item)
+			// is done by the server's loadFromDB second pass.
 		case "malelooktype":
 			it.MaleLooktype = uint16(atoi(val))
 		case "femalelooktype":
@@ -512,13 +609,21 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 		case "invisible":
 			ensureAbilities().Invisible = val != "0"
 		case "healthgain":
-			ensureAbilities().HealthGain = int32(atoi(val))
+			a := ensureAbilities()
+			a.HealthGain = int32(atoi(val))
+			a.Regeneration = true
 		case "healthticks":
-			ensureAbilities().HealthTicks = int32(atoi(val))
+			a := ensureAbilities()
+			a.HealthTicks = int32(atoi(val))
+			a.Regeneration = true
 		case "managain":
-			ensureAbilities().ManaGain = int32(atoi(val))
+			a := ensureAbilities()
+			a.ManaGain = int32(atoi(val))
+			a.Regeneration = true
 		case "manaticks":
-			ensureAbilities().ManaTicks = int32(atoi(val))
+			a := ensureAbilities()
+			a.ManaTicks = int32(atoi(val))
+			a.Regeneration = true
 		case "manashield":
 			ensureAbilities().ManaShield = val != "0"
 		case "regeneration":
@@ -580,32 +685,32 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 				a.Absorb = make(map[int]int16)
 			}
 			for _, ct := range allCombatTypes {
-				a.Absorb[ct] = v
+				a.Absorb[ct] += v
 			}
 		case "absorbpercentphysical":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatPhysical] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatPhysical] += int16(atoi(val))
 		case "absorbpercentenergy":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatEnergy] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatEnergy] += int16(atoi(val))
 		case "absorbpercentfire":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatFire] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatFire] += int16(atoi(val))
 		case "absorbpercentpoison", "absorbpercentearth":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatEarth] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatEarth] += int16(atoi(val))
 		case "absorbpercentice":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatIce] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatIce] += int16(atoi(val))
 		case "absorbpercentholy":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatHoly] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatHoly] += int16(atoi(val))
 		case "absorbpercentdeath":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatDeath] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatDeath] += int16(atoi(val))
 		case "absorbpercentlifedrain":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatLifeDrain] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatLifeDrain] += int16(atoi(val))
 		case "absorbpercentmanadrain":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatManaDrain] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatManaDrain] += int16(atoi(val))
 		case "absorbpercentdrown":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatDrown] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatDrown] += int16(atoi(val))
 		case "absorbpercenthealing":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatHealing] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatHealing] += int16(atoi(val))
 		case "absorbpercentundefined":
-			ensureAbsorbMap(ensureAbilities())[gamedata.CombatUndefined] = int16(atoi(val))
+			ensureAbsorbMap(ensureAbilities())[gamedata.CombatUndefined] += int16(atoi(val))
 
 		case "absorbpercentelements":
 			v := int16(atoi(val))
@@ -628,37 +733,37 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 
 		// Field absorb
 		case "fieldabsorbpercentenergy":
-			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatEnergy] = int16(atoi(val))
+			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatEnergy] += int16(atoi(val))
 		case "fieldabsorbpercentfire":
-			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatFire] = int16(atoi(val))
+			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatFire] += int16(atoi(val))
 		case "fieldabsorbpercentpoison", "fieldabsorbpercentearth":
-			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatEarth] = int16(atoi(val))
+			ensureFieldAbsorbMap(ensureAbilities())[gamedata.CombatEarth] += int16(atoi(val))
 
 		// Reflect percent
 		case "reflectpercentphysical":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatPhysical] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatPhysical] += int16(atoi(val))
 		case "reflectpercentenergy":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatEnergy] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatEnergy] += int16(atoi(val))
 		case "reflectpercentfire":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatFire] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatFire] += int16(atoi(val))
 		case "reflectpercentearth":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatEarth] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatEarth] += int16(atoi(val))
 		case "reflectpercentice":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatIce] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatIce] += int16(atoi(val))
 		case "reflectpercentholy":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatHoly] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatHoly] += int16(atoi(val))
 		case "reflectpercentdeath":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatDeath] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatDeath] += int16(atoi(val))
 		case "reflectpercentlifedrain":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatLifeDrain] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatLifeDrain] += int16(atoi(val))
 		case "reflectpercentmanadrain":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatManaDrain] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatManaDrain] += int16(atoi(val))
 		case "reflectpercentdrown":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatDrown] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatDrown] += int16(atoi(val))
 		case "reflectpercenthealing":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatHealing] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatHealing] += int16(atoi(val))
 		case "reflectpercentundefined":
-			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatUndefined] = int16(atoi(val))
+			ensureReflectPercentMap(ensureAbilities())[gamedata.CombatUndefined] += int16(atoi(val))
 		case "reflectpercentall":
 			v := int16(atoi(val))
 			a := ensureAbilities()
@@ -666,7 +771,7 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 				a.ReflectPercent = make(map[int]int16)
 			}
 			for _, ct := range allCombatTypes {
-				a.ReflectPercent[ct] = v
+				a.ReflectPercent[ct] += v
 			}
 		case "reflectpercentelements":
 			v := int16(atoi(val))
@@ -689,29 +794,29 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 
 		// Reflect chance
 		case "reflectchancephysical":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatPhysical] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatPhysical] += int16(atoi(val))
 		case "reflectchanceenergy":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatEnergy] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatEnergy] += int16(atoi(val))
 		case "reflectchancefire":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatFire] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatFire] += int16(atoi(val))
 		case "reflectchanceearth":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatEarth] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatEarth] += int16(atoi(val))
 		case "reflectchanceice":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatIce] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatIce] += int16(atoi(val))
 		case "reflectchanceholy":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatHoly] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatHoly] += int16(atoi(val))
 		case "reflectchancedeath":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatDeath] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatDeath] += int16(atoi(val))
 		case "reflectchancelifedrain":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatLifeDrain] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatLifeDrain] += int16(atoi(val))
 		case "reflectchancemanadrain":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatManaDrain] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatManaDrain] += int16(atoi(val))
 		case "reflectchancedrown":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatDrown] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatDrown] += int16(atoi(val))
 		case "reflectchancehealing":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatHealing] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatHealing] += int16(atoi(val))
 		case "reflectchanceundefined":
-			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatUndefined] = int16(atoi(val))
+			ensureReflectChanceMap(ensureAbilities())[gamedata.CombatUndefined] += int16(atoi(val))
 		case "reflectchanceall":
 			v := int16(atoi(val))
 			a := ensureAbilities()
@@ -719,7 +824,7 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 				a.ReflectChance = make(map[int]int16)
 			}
 			for _, ct := range allCombatTypes {
-				a.ReflectChance[ct] = v
+				a.ReflectChance[ct] += v
 			}
 		case "reflectchanceelements":
 			v := int16(atoi(val))
@@ -785,8 +890,14 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 			a := ensureAbilities()
 			a.ElementType = gamedata.CombatUndefined
 			a.ElementDamage = int16(atoi(val))
+		case "elementhealing":
+			a := ensureAbilities()
+			a.ElementType = gamedata.CombatHealing
+			a.ElementDamage = int16(atoi(val))
 
 		case "field":
+			it.ItemGroup = 8  // ITEM_GROUP_MAGICFIELD
+			it.ItemTypeVal = 6 // ITEM_TYPE_MAGICFIELD
 			ab := ensureAbilities()
 			ab.FieldCombatType = fieldCombatType(strings.ToLower(val))
 			for _, sub := range a.Children {
@@ -805,49 +916,93 @@ func applyXMLAttrs(it *gamedata.ItemType, attrs []xmlAttr) {
 
 		// Suppress conditions
 		case "suppresspoison", "suppressearth":
-			ensureAbilities().ConditionSuppressions |= condPoison
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condPoison
+			}
 		case "suppressfire", "suppressburn":
-			ensureAbilities().ConditionSuppressions |= condFire
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condFire
+			}
 		case "suppressenergy", "suppressshock":
-			ensureAbilities().ConditionSuppressions |= condEnergy
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condEnergy
+			}
 		case "suppressbleeding":
-			ensureAbilities().ConditionSuppressions |= condBleeding
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condBleeding
+			}
 		case "suppresshaste":
-			ensureAbilities().ConditionSuppressions |= condHaste
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condHaste
+			}
 		case "suppressparalyze":
-			ensureAbilities().ConditionSuppressions |= condParalyze
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condParalyze
+			}
 		case "suppressoutfit":
-			ensureAbilities().ConditionSuppressions |= condOutfit
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condOutfit
+			}
 		case "suppressinvisible":
-			ensureAbilities().ConditionSuppressions |= condInvisible
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condInvisible
+			}
 		case "suppresslight":
-			ensureAbilities().ConditionSuppressions |= condLight
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condLight
+			}
 		case "suppressmanashield":
-			ensureAbilities().ConditionSuppressions |= condManaShield
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condManaShield
+			}
 		case "suppressinfight":
-			ensureAbilities().ConditionSuppressions |= condInfight
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condInfight
+			}
 		case "suppressdrunk":
-			ensureAbilities().ConditionSuppressions |= condDrunk
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condDrunk
+			}
 		case "suppressexhaust":
-			ensureAbilities().ConditionSuppressions |= condExhaust
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condExhaust
+			}
 		case "suppressregeneration":
-			ensureAbilities().ConditionSuppressions |= condRegen
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condRegen
+			}
 		case "suppresssoul":
-			ensureAbilities().ConditionSuppressions |= condSoul
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condSoul
+			}
 		case "suppressdrown":
-			ensureAbilities().ConditionSuppressions |= condDrown
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condDrown
+			}
 		case "suppressmuted":
-			ensureAbilities().ConditionSuppressions |= condMuted
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condMuted
+			}
 		case "suppressattributes":
-			ensureAbilities().ConditionSuppressions |= condAttributes
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condAttributes
+			}
 		case "suppressice", "suppressfreeze", "suppressfreezing":
-			ensureAbilities().ConditionSuppressions |= condFreezing
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condFreezing
+			}
 		case "suppressholy", "suppressdazzle", "suppressdazzled":
-			ensureAbilities().ConditionSuppressions |= condDazzled
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condDazzled
+			}
 		case "suppressdeath", "suppresscurse", "suppresscursed":
-			ensureAbilities().ConditionSuppressions |= condCursed
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condCursed
+			}
 		case "suppressphysical", "suppresspacified":
-			ensureAbilities().ConditionSuppressions |= condPacified
+			if val != "0" {
+				ensureAbilities().ConditionSuppressions |= condPacified
+			}
 		}
 	}
 
@@ -1046,8 +1201,9 @@ func fluidTypeVal(s string) int {
 	return m[s]
 }
 
-// slotTypeVals returns SLOTP_* bitfield and SLOT_* wield position (C4 fix)
-func slotTypeVals(s string) (uint32, uint32) {
+// slotTypeVals applies SLOTP_* bitfield and SLOT_* wield position.
+// For right-hand/left-hand the C++ clears the opposite bit instead of assigning.
+func slotTypeVals(s string, current uint32) (uint32, uint32) {
 	switch s {
 	case "head":
 		return slotpHead, slotHead
@@ -1058,9 +1214,9 @@ func slotTypeVals(s string) (uint32, uint32) {
 	case "body", "armor":
 		return slotpArmor, slotArmor
 	case "right-hand":
-		return slotpRight, slotRight
+		return current &^ slotpLeft, slotRight
 	case "left-hand":
-		return slotpLeft, slotLeft
+		return current &^ slotpRight, slotLeft
 	case "legs":
 		return slotpLegs, slotLegs
 	case "feet":
@@ -1084,4 +1240,19 @@ func parseBool(val string) bool {
 func atoi(s string) int {
 	n, _ := strconv.Atoi(s)
 	return n
+}
+
+func directionFromString(s string) uint8 {
+	switch s {
+	case "north", "0":
+		return 0
+	case "east", "1":
+		return 1
+	case "south", "2":
+		return 2
+	case "west", "3":
+		return 3
+	}
+	v, _ := strconv.Atoi(s)
+	return uint8(v)
 }

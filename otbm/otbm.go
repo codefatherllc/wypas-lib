@@ -39,8 +39,9 @@ const (
 	AttrWrittenBy   = 19
 	AttrSleeperGUID = 20
 	AttrSleepStart  = 21
-	AttrCharges     = 22
-	AttrAttrMap     = 128
+	AttrCharges        = 22
+	AttrContainerItems = 23
+	AttrAttrMap        = 128
 )
 
 const (
@@ -56,6 +57,14 @@ type TeleportDest struct {
 	Z    uint8
 }
 
+type ItemAttrValue struct {
+	Type    uint8 // 1=string, 2=int32, 3=float, 4=bool
+	Str     string
+	Int     int32
+	Float   float32
+	Boolean bool
+}
+
 type MapItem struct {
 	ID           uint16
 	ActionID     uint16
@@ -68,6 +77,13 @@ type MapItem struct {
 	Charges      uint16
 	RuneCharges  uint8
 	Count        uint8
+	Duration     uint32
+	WrittenDate  uint32
+	WrittenBy    string
+	SleeperGUID  uint32
+	SleepStart   uint32
+	CustomAttrs  map[string]ItemAttrValue
+	SubItems     []MapItem
 }
 
 type MapTile struct {
@@ -95,13 +111,19 @@ type FloorBounds struct {
 }
 
 type GameMap struct {
-	Tiles       map[uint64]*MapTile
-	MinX, MinY  uint16
-	MaxX, MaxY  uint16
-	Floors      []uint8
-	Towns       []Town
-	Waypoints   []Waypoint
-	FloorBounds map[uint8]*FloorBounds
+	Version      uint32
+	Width        uint16
+	Height       uint16
+	Descriptions []string
+	SpawnFile    string
+	HouseFile    string
+	Tiles        map[uint64]*MapTile
+	MinX, MinY   uint16
+	MaxX, MaxY   uint16
+	Floors       []uint8
+	Towns        []Town
+	Waypoints    []Waypoint
+	FloorBounds  map[uint8]*FloorBounds
 }
 
 func PackPos(x, y uint16, z uint8) uint64 {
@@ -115,11 +137,17 @@ func ParseOTBM(path string) (*GameMap, error) {
 	}
 
 	root.ResetPos()
-	if err := root.Skip(4 + 2 + 2 + 1 + 3 + 4); err != nil {
-		return nil, fmt.Errorf("skip root header: %w", err)
+	version, _ := root.GetU32()
+	width, _ := root.GetU16()
+	height, _ := root.GetU16()
+	if err := root.Skip(4 + 4); err != nil {
+		return nil, fmt.Errorf("skip root header items version: %w", err)
 	}
 
 	gm := &GameMap{
+		Version:     version,
+		Width:       width,
+		Height:      height,
 		Tiles:       make(map[uint64]*MapTile),
 		MinX:        math.MaxUint16,
 		MinY:        math.MaxUint16,
@@ -131,6 +159,37 @@ func ParseOTBM(path string) (*GameMap, error) {
 		if mapDataNode.Type != NodeMapData {
 			continue
 		}
+
+		mapDataNode.ResetPos()
+		for mapDataNode.Remaining() > 0 {
+			attr, err := mapDataNode.GetU8()
+			if err != nil {
+				break
+			}
+			switch attr {
+			case AttrDescription:
+				desc, err := mapDataNode.GetString()
+				if err != nil {
+					break
+				}
+				gm.Descriptions = append(gm.Descriptions, desc)
+			case AttrSpawnFile:
+				sf, err := mapDataNode.GetString()
+				if err != nil {
+					break
+				}
+				gm.SpawnFile = sf
+			case AttrHouseFile:
+				hf, err := mapDataNode.GetString()
+				if err != nil {
+					break
+				}
+				gm.HouseFile = hf
+			default:
+				goto doneMapAttrs
+			}
+		}
+	doneMapAttrs:
 
 		for _, child := range mapDataNode.Children {
 			switch child.Type {
@@ -227,19 +286,12 @@ func parseTileArea(node *Node, gm *GameMap, floorSet map[uint8]bool) error {
 			if itemNode.Type != NodeItem {
 				continue
 			}
-			itemNode.ResetPos()
-			if itemNode.Remaining() < 2 {
-				continue
-			}
-			sid, _ := itemNode.GetU16()
-			tile.Items = append(tile.Items, sid)
-
-			item := MapItem{ID: sid}
-			parseItemAttrs(itemNode, &item)
+			item := parseItemNode(itemNode)
+			tile.Items = append(tile.Items, item.ID)
 			tile.RichItems = append(tile.RichItems, item)
 		}
 
-		if len(tile.Items) > 0 || tile.Flags != 0 {
+		if len(tile.Items) > 0 || tile.Flags != 0 || tile.HouseID != 0 {
 			key := PackPos(x, y, z)
 			gm.Tiles[key] = tile
 
@@ -287,6 +339,83 @@ func skipTileAttr(node *Node, attr uint8) bool {
 		return err == nil
 	default:
 		return false
+	}
+}
+
+func parseItemNode(node *Node) MapItem {
+	node.ResetPos()
+	if node.Remaining() < 2 {
+		return MapItem{}
+	}
+	sid, _ := node.GetU16()
+	item := MapItem{ID: sid}
+	parseItemAttrs(node, &item)
+
+	for _, child := range node.Children {
+		if child.Type != NodeItem {
+			continue
+		}
+		subItem := parseItemNode(child)
+		item.SubItems = append(item.SubItems, subItem)
+	}
+	return item
+}
+
+const (
+	attrMapTypeString  = 1
+	attrMapTypeInteger = 2
+	attrMapTypeFloat   = 3
+	attrMapTypeBoolean = 4
+)
+
+func parseAttrMap(node *Node, item *MapItem) {
+	count, err := node.GetU16()
+	if err != nil {
+		return
+	}
+	for i := 0; i < int(count); i++ {
+		key, err := node.GetString()
+		if err != nil {
+			return
+		}
+		typeByte, err := node.GetU8()
+		if err != nil {
+			return
+		}
+		var val ItemAttrValue
+		val.Type = typeByte
+		switch typeByte {
+		case attrMapTypeString:
+			v, err := node.GetLongString()
+			if err != nil {
+				return
+			}
+			val.Str = v
+		case attrMapTypeInteger:
+			v, err := node.GetU32()
+			if err != nil {
+				return
+			}
+			val.Int = int32(v)
+		case attrMapTypeFloat:
+			v, err := node.GetFloat32()
+			if err != nil {
+				return
+			}
+			val.Float = v
+		case attrMapTypeBoolean:
+			v, err := node.GetU8()
+			if err != nil {
+				return
+			}
+			val.Boolean = v != 0
+		default:
+			return
+		}
+		if item.CustomAttrs == nil {
+			item.CustomAttrs = make(map[string]ItemAttrValue)
+		}
+		item.CustomAttrs[key] = val
 	}
 }
 
@@ -366,33 +495,45 @@ func parseItemAttrs(node *Node, item *MapItem) {
 			}
 			item.Count = v
 		case AttrDuration:
-			if err := node.Skip(4); err != nil {
+			v, err := node.GetU32()
+			if err != nil {
 				return
 			}
+			item.Duration = v
 		case AttrDecayState:
 			if err := node.Skip(1); err != nil {
 				return
 			}
 		case AttrWrittenDate:
-			if err := node.Skip(4); err != nil {
+			v, err := node.GetU32()
+			if err != nil {
 				return
 			}
+			item.WrittenDate = v
 		case AttrWrittenBy:
-			if _, err := node.GetString(); err != nil {
+			v, err := node.GetString()
+			if err != nil {
 				return
 			}
+			item.WrittenBy = v
 		case AttrSleeperGUID:
-			if err := node.Skip(4); err != nil {
+			v, err := node.GetU32()
+			if err != nil {
 				return
 			}
+			item.SleeperGUID = v
 		case AttrSleepStart:
+			v, err := node.GetU32()
+			if err != nil {
+				return
+			}
+			item.SleepStart = v
+		case AttrContainerItems:
 			if err := node.Skip(4); err != nil {
 				return
 			}
 		case AttrAttrMap:
-			// Attribute map: 2-byte length-prefixed key-value pairs.
-			// Skip the rest of the node data since we can't know the
-			// internal structure without a full deserializer.
+			parseAttrMap(node, item)
 			return
 		default:
 			return

@@ -92,17 +92,55 @@ func convertTiles(gm *GameMap) []gamedata.MapTile {
 			copy(itemsCopy, items)
 		}
 
+		var richItems []gamedata.RichItem
+		if len(tile.RichItems) > 1 {
+			richItems = make([]gamedata.RichItem, 0, len(tile.RichItems)-1)
+			for _, ri := range tile.RichItems[1:] {
+				richItems = append(richItems, convertRichItem(ri))
+			}
+		}
+
 		tiles = append(tiles, gamedata.MapTile{
-			X:        x,
-			Y:        y,
-			Z:        z,
-			GroundID: groundID,
-			Flags:    tile.Flags,
-			HouseID:  tile.HouseID,
-			Items:    itemsCopy,
+			X:         x,
+			Y:         y,
+			Z:         z,
+			GroundID:  groundID,
+			Flags:     tile.Flags,
+			HouseID:   tile.HouseID,
+			Items:     itemsCopy,
+			RichItems: richItems,
 		})
 	}
 	return tiles
+}
+
+func convertRichItem(mi MapItem) gamedata.RichItem {
+	ri := gamedata.RichItem{
+		ServerID:    mi.ID,
+		ActionID:    mi.ActionID,
+		UniqueID:    mi.UniqueID,
+		DoorID:      mi.DoorID,
+		DepotID:     mi.DepotID,
+		Text:        mi.Text,
+		Description: mi.Description,
+		Charges:     mi.Charges,
+		RuneCharges: mi.RuneCharges,
+		Count:       mi.Count,
+		Duration:    mi.Duration,
+		WrittenDate: mi.WrittenDate,
+		WrittenBy:   mi.WrittenBy,
+		SleeperGUID: mi.SleeperGUID,
+		SleepStart:  mi.SleepStart,
+	}
+	if mi.TeleDest != nil {
+		ri.TeleDestX = mi.TeleDest.X
+		ri.TeleDestY = mi.TeleDest.Y
+		ri.TeleDestZ = mi.TeleDest.Z
+	}
+	for _, sub := range mi.SubItems {
+		ri.SubItems = append(ri.SubItems, convertRichItem(sub))
+	}
+	return ri
 }
 
 func convertTowns(towns []Town) []gamedata.Town {

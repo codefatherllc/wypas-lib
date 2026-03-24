@@ -3,6 +3,7 @@ package otbm
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -119,6 +120,28 @@ func (n *Node) Skip(count int) error {
 	}
 	n.pos += count
 	return nil
+}
+
+func (n *Node) GetLongString() (string, error) {
+	length, err := n.GetU32()
+	if err != nil {
+		return "", fmt.Errorf("read long string length: %w", err)
+	}
+	if n.pos+int(length) > len(n.Data) {
+		return "", fmt.Errorf("read long string: need %d bytes at pos %d, have %d", length, n.pos, len(n.Data))
+	}
+	s := string(n.Data[n.pos : n.pos+int(length)])
+	n.pos += int(length)
+	return s, nil
+}
+
+func (n *Node) GetFloat32() (float32, error) {
+	if n.pos+4 > len(n.Data) {
+		return 0, fmt.Errorf("read float32: need 4 bytes at pos %d, have %d", n.pos, len(n.Data))
+	}
+	bits := binary.LittleEndian.Uint32(n.Data[n.pos:])
+	n.pos += 4
+	return math.Float32frombits(bits), nil
 }
 
 func (n *Node) Remaining() int {

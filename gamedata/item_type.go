@@ -85,6 +85,17 @@ type ItemType struct {
 	FemaleTransformTo  uint16          `db:"female_transform_to"`
 	FemaleLooktype     uint16          `db:"female_looktype"`
 	Cache              bool            `db:"cache"`
+	HasHeight          bool            `db:"-"`
+	Usable             bool            `db:"-"`
+	Stackable          bool            `db:"-"`
+	AlwaysOnTop        bool            `db:"-"`
+	Rotable            bool            `db:"-"`
+	IsHangable         bool            `db:"-"`
+	LookThrough        bool            `db:"-"`
+	IsAnimation        bool            `db:"-"`
+	Text               string          `db:"-"`
+	Writer             string          `db:"-"`
+	Date               int32           `db:"-"`
 	Abilities          NullableAbilities `db:"abilities"`
 }
 
