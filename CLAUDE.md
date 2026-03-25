@@ -22,6 +22,7 @@ No binary output. This is a library module consumed via `go get`.
 | `otbm` | Raw binary OTBM/OTB parser (internal — `otb/` is the high-level loader returning `gamedata.*` types) |
 | `ratelimit` | `New(max, window)` → `Limiter.Allow(ip)` — in-memory sliding window |
 | `response` | `JSON(w, status, data)`, `Error(w, status, msg)` |
+| `maptile` | Map tile renderer (`Renderer`, `RenderTile`, `RenderMinimapImage`, `EncodePNG`, `From8Bit`). Sprite + minimap rendering with floor stacking, displacement, elevation, patterns. |
 | `sprite` | `Cache` (dat+spr loader, PNG render), `DatFile`, `SpriteFile`, outfit color palette |
 | `worlds` | `Load(path)` → `WorldList` from JSON, `All()`, `ByID()`, `Default()` |
 
