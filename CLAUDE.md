@@ -20,10 +20,9 @@ No binary output. This is a library module consumed via `go get`.
 | `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.) |
 | `otb` | Legacy file loading (OTB+XML→`gamedata.ItemType`, OTBM+XMLs→gamedata world types). Used by otconv, creator demo, api demo. |
 | `otbm` | Raw binary OTBM/OTB parser (internal — `otb/` is the high-level loader returning `gamedata.*` types) |
-| `ratelimit` | `New(max, window)` → `Limiter.Allow(ip)` — in-memory sliding window |
-| `response` | `JSON(w, status, data)`, `Error(w, status, msg)` |
 | `maptile` | Map tile renderer (`Renderer`, `RenderTile`, `RenderMinimapImage`, `EncodePNG`, `From8Bit`). Sprite + minimap rendering with floor stacking, displacement, elevation, patterns. |
 | `sprite` | `Cache` (dat+spr loader, PNG render), `DatFile`, `SpriteFile`, outfit color palette |
+| `taxonomy` | Item classification (`Role`, `ClassifyItem`), semantic grouping (`GroupByMinimapColor`, `BuildFromItems`), taxonomy JSON schema types (`SemanticGroup`, `AdjacencyRule`, `WallPattern`, `MonsterAffinity`, `WFCAdjacencyData`), JSON loader (`LoadTaxonomy`) + 15 lookup methods. Shared between brain (consumer) and scrapper (producer). |
 | `worlds` | `Load(path)` → `WorldList` from JSON, `All()`, `ByID()`, `Default()` |
 
 ## OTBM Types
