@@ -122,6 +122,7 @@ func (t *Taxonomy) init() {
 
 	groundIDs := make(map[uint16]struct{})
 	for _, g := range t.GroundGroups {
+		g.Role = GROUND
 		t.groundByIndex[g.Index] = g
 		for _, id := range g.Items {
 			t.itemToGroup[id] = g.Index
@@ -133,6 +134,7 @@ func (t *Taxonomy) init() {
 	t.NumGroundIDs = len(groundIDs)
 
 	for _, g := range t.WallGroups {
+		g.Role = WALL
 		t.wallByIndex[g.Index] = g
 		for _, id := range g.Items {
 			t.itemToGroup[id] = g.Index
@@ -143,6 +145,7 @@ func (t *Taxonomy) init() {
 
 	borderCount := 0
 	for _, g := range t.BorderGroups {
+		g.Role = GROUND_BORDER
 		for _, id := range g.Items {
 			t.itemToGroup[id] = g.Index
 			t.itemToRole[id] = "border"

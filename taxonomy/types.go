@@ -40,17 +40,20 @@ type GroundPairData struct {
 type BorderSeqData struct {
 	FromGroup int   `json:"from_group"`
 	ToGroup   int   `json:"to_group"`
+	Direction int   `json:"direction"`
 	BorderIDs []int `json:"border_ids"`
+	Count     int   `json:"count"`
 }
 
 type WallConnData struct {
 	FromGroup int `json:"from_wall_group"`
 	ToGroup   int `json:"to_wall_group"`
 	Direction int `json:"direction"`
+	Count     int `json:"count"`
 }
 
 type WFCAdjacencyData struct {
 	GroundPairs []GroundPairData `json:"ground_pairs"`
-	BorderSeqs  []BorderSeqData  `json:"border_seqs"`
-	WallConns   []WallConnData   `json:"wall_conns"`
+	BorderSeqs  []BorderSeqData  `json:"border_sequences"`
+	WallConns   []WallConnData   `json:"wall_connections"`
 }
