@@ -12,7 +12,6 @@ import (
 
 type BuildTaxonomy struct {
 	GroundGroups map[uint16]*SemanticGroup
-	BorderGroups map[uint16]*SemanticGroup
 	DecoItems    map[uint16]int
 	GroundIDs    map[uint16]int
 	BorderIDs    map[uint16]int
@@ -29,14 +28,10 @@ func BuildFromItems(items []gamedata.ItemType) *BuildTaxonomy {
 	allGroups := GroupByMinimapColor(items, roleMap)
 
 	groundGroups := make(map[uint16]*SemanticGroup)
-	borderGroups := make(map[uint16]*SemanticGroup)
 
 	for color, g := range allGroups {
-		switch g.Role {
-		case GROUND:
+		if g.Role == GROUND {
 			groundGroups[color] = g
-		case GROUND_BORDER:
-			borderGroups[color] = g
 		}
 	}
 
@@ -66,7 +61,6 @@ func BuildFromItems(items []gamedata.ItemType) *BuildTaxonomy {
 
 	return &BuildTaxonomy{
 		GroundGroups: groundGroups,
-		BorderGroups: borderGroups,
 		DecoItems:    decoItems,
 		GroundIDs:    groundIDs,
 		BorderIDs:    borderIDs,
@@ -77,19 +71,18 @@ func BuildFromItems(items []gamedata.ItemType) *BuildTaxonomy {
 
 type Taxonomy struct {
 	GroundGroups    map[string]*SemanticGroup `json:"ground_groups"`
-	WallGroups      map[string]*SemanticGroup `json:"wall_groups"`
-	BorderGroups    map[string]*SemanticGroup `json:"border_groups"`
+	WallGroups      map[string]*SemanticGroup `json:"wall_groups,omitempty"`
 	DecoVocab       map[string]int            `json:"deco_vocab"`
 	AdjacencyRules  []AdjacencyRule           `json:"adjacency_rules"`
 	WallPatterns    []WallPattern             `json:"wall_patterns"`
 	MonsterAffinity []MonsterAffinity         `json:"monster_affinity"`
 	WFCAdjacency    *WFCAdjacencyData         `json:"wfc_adjacency,omitempty"`
 
-	NumGroundGroups int `json:"-"`
-	NumWallGroups   int `json:"-"`
-	NumBorderItems  int `json:"-"`
-	NumDecoItems    int `json:"-"`
-	NumGroundIDs    int `json:"-"`
+	NumGroundGroups int `json:"num_ground_groups"`
+	NumWallGroups   int `json:"num_wall_groups,omitempty"`
+	NumBorderItems  int `json:"num_border_items"`
+	NumDecoItems    int `json:"num_deco_items"`
+	NumGroundIDs    int `json:"num_ground_ids"`
 
 	groundByIndex   map[int]*SemanticGroup
 	wallByIndex     map[int]*SemanticGroup
@@ -130,7 +123,9 @@ func (t *Taxonomy) init() {
 			groundIDs[id] = struct{}{}
 		}
 	}
-	t.NumGroundGroups = len(t.GroundGroups)
+	if t.NumGroundGroups == 0 {
+		t.NumGroundGroups = len(t.GroundGroups)
+	}
 	t.NumGroundIDs = len(groundIDs)
 
 	for _, g := range t.WallGroups {
@@ -141,20 +136,17 @@ func (t *Taxonomy) init() {
 			t.itemToRole[id] = "wall"
 		}
 	}
-	t.NumWallGroups = len(t.WallGroups)
-
-	borderCount := 0
-	for _, g := range t.BorderGroups {
-		g.Role = GROUND_BORDER
-		for _, id := range g.Items {
-			t.itemToGroup[id] = g.Index
-			t.itemToRole[id] = "border"
-			borderCount++
-		}
+	if t.NumWallGroups == 0 {
+		t.NumWallGroups = len(t.WallGroups)
 	}
-	t.NumBorderItems = borderCount
 
-	t.NumDecoItems = len(t.DecoVocab)
+	if t.NumBorderItems == 0 {
+		t.NumBorderItems = 0
+	}
+
+	if t.NumDecoItems == 0 {
+		t.NumDecoItems = len(t.DecoVocab)
+	}
 	for key, idx := range t.DecoVocab {
 		var sid uint16
 		fmt.Sscanf(key, "%d", &sid)
