@@ -109,15 +109,16 @@ const (
 )
 
 type otbItem struct {
-	group    uint8
-	flags    uint32
-	serverID uint16
-	clientID uint16
-	speed    uint16
-	topOrder int8
-	lightLvl uint16
-	lightCol uint16
-	wareID   uint16
+	group        uint8
+	flags        uint32
+	serverID     uint16
+	clientID     uint16
+	speed        uint16
+	topOrder     int8
+	lightLvl     uint16
+	lightCol     uint16
+	wareID       uint16
+	minimapColor uint16
 }
 
 func LoadItems(otbPath, xmlPath string) ([]gamedata.ItemType, error) {
@@ -146,9 +147,10 @@ func LoadItems(otbPath, xmlPath string) ([]gamedata.ItemType, error) {
 			Flags:       oi.flags,
 			Speed:       oi.speed,
 			TopOrder:    oi.topOrder,
-			LightLevel:  int16(oi.lightLvl),
-			LightColor:  int16(oi.lightCol),
-			WareID:      oi.wareID,
+			LightLevel:   int16(oi.lightLvl),
+			LightColor:   int16(oi.lightCol),
+			WareID:        oi.wareID,
+			MinimapColor:  oi.minimapColor,
 			Movable:     true,
 			WalkStack:   true,
 			ShowCount:   true,
@@ -266,6 +268,15 @@ func parseOTBFull(path string) ([]otbItem, error) {
 			case 0x14: // ITEM_ATTR_SPEED
 				if attrLen >= 2 {
 					oi.speed, _ = child.GetU16()
+					if attrLen > 2 {
+						child.Skip(int(attrLen) - 2)
+					}
+				} else {
+					child.Skip(int(attrLen))
+				}
+			case 0x23: // ITEM_ATTR_MINIMAP_COLOR
+				if attrLen >= 2 {
+					oi.minimapColor, _ = child.GetU16()
 					if attrLen > 2 {
 						child.Skip(int(attrLen) - 2)
 					}
