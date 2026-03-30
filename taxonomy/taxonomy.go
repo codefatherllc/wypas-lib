@@ -73,6 +73,7 @@ type Taxonomy struct {
 	GroundGroups    map[string]*SemanticGroup `json:"ground_groups"`
 	WallGroups      map[string]*SemanticGroup `json:"wall_groups,omitempty"`
 	DecoVocab       map[string]int            `json:"deco_vocab"`
+	RoleMap         map[string]string         `json:"role_map,omitempty"`
 	AdjacencyRules  []AdjacencyRule           `json:"adjacency_rules"`
 	WallPatterns    []WallPattern             `json:"wall_patterns"`
 	MonsterAffinity []MonsterAffinity         `json:"monster_affinity"`
@@ -153,6 +154,15 @@ func (t *Taxonomy) init() {
 		t.decoByIndex[idx] = sid
 	}
 
+	// Load role_map from JSON (written by scrapper) — overrides inferred roles
+	if len(t.RoleMap) > 0 {
+		for key, role := range t.RoleMap {
+			var sid uint16
+			fmt.Sscanf(key, "%d", &sid)
+			t.itemToRole[sid] = role
+		}
+	}
+
 	t.affinityByGroup = make(map[int][]MonsterAffinity)
 	for _, ma := range t.MonsterAffinity {
 		for _, g := range ma.GroundGroups {
@@ -229,6 +239,18 @@ func (t *Taxonomy) IsWall(serverID uint16) bool {
 
 func (t *Taxonomy) IsBorder(serverID uint16) bool {
 	return t.itemToRole[serverID] == "border"
+}
+
+func (t *Taxonomy) IsBlocking(serverID uint16) bool {
+	return t.itemToRole[serverID] == "blocking"
+}
+
+func (t *Taxonomy) IsDecoration(serverID uint16) bool {
+	return t.itemToRole[serverID] == "decoration"
+}
+
+func (t *Taxonomy) RoleOf(serverID uint16) string {
+	return t.itemToRole[serverID]
 }
 
 func (t *Taxonomy) AffinityForGroundGroup(groupIndex int) []MonsterAffinity {
