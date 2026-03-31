@@ -24,6 +24,8 @@ Go 1.22+
 | `ratelimit` | In-memory IP rate limiter (sliding window) |
 | `response` | JSON response helpers (`JSON`, `Error`) |
 | `sprite` | .dat/.spr appearance and sprite parser, cache, item/outfit rendering with color palette |
+| `maptile` | Map tile renderer (sprite + minimap rendering with floor stacking, displacement, elevation, patterns) |
+| `taxonomy` | Item classification (roles, semantic groups, minimap color grouping), taxonomy JSON schema, loader + lookup methods |
 | `worlds` | Game world list loader from JSON (`worlds.json`) |
 
 ## Install
