@@ -57,9 +57,11 @@ func EncodeItems(items []uint16) []byte {
 	if len(items) == 0 {
 		return nil
 	}
-	buf := make([]byte, len(items)*2)
+	// Each item: 2 bytes (uint16 ID) + 1 byte (ATTR_END = 0x00)
+	buf := make([]byte, len(items)*3)
 	for i, id := range items {
-		binary.LittleEndian.PutUint16(buf[i*2:], id)
+		binary.LittleEndian.PutUint16(buf[i*3:], id)
+		buf[i*3+2] = 0x00 // ATTR_END
 	}
 	return buf
 }
