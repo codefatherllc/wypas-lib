@@ -90,9 +90,9 @@ type SpawnCreature struct {
 type Town struct {
 	ID     uint32 `db:"id"`
 	Name   string `db:"name"`
-	EntryX uint16 `db:"entry_x"`
-	EntryY uint16 `db:"entry_y"`
-	EntryZ uint8  `db:"entry_z"`
+	X uint16 `db:"x"`
+	Y uint16 `db:"y"`
+	Z uint8  `db:"z"`
 }
 
 type Waypoint struct {

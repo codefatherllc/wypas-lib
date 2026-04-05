@@ -6,12 +6,12 @@ import (
 )
 
 func LoadTiles(db *sql.DB) ([]MapTile, error) {
-	return loadTilesQuery(db, "SELECT x, y, z, ground_id, flags, house_id, items FROM map_tiles")
+	return loadTilesQuery(db, "SELECT x, y, z, ground_id, flags, house_id, items FROM map")
 }
 
 func LoadTilesInArea(db *sql.DB, minX, minY, maxX, maxY uint16, z uint8) ([]MapTile, error) {
 	return loadTilesQuery(db,
-		"SELECT x, y, z, ground_id, flags, house_id, items FROM map_tiles "+
+		"SELECT x, y, z, ground_id, flags, house_id, items FROM map "+
 			"WHERE x >= ? AND x <= ? AND y >= ? AND y <= ? AND z = ?",
 		minX, maxX, minY, maxY, z)
 }
@@ -40,7 +40,7 @@ func loadTilesQuery(db *sql.DB, query string, args ...interface{}) ([]MapTile, e
 }
 
 func LoadSpawns(db *sql.DB) ([]Spawn, error) {
-	rows, err := db.Query("SELECT id, center_x, center_y, center_z, radius FROM map_spawns")
+	rows, err := db.Query("SELECT id, center_x, center_y, center_z, radius FROM spawns")
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 		return nil, err
 	}
 
-	erows, err := db.Query("SELECT id, spawn_id, name, type, offset_x, offset_y, offset_z, spawntime, direction FROM map_spawn_entries")
+	erows, err := db.Query("SELECT id, spawn_id, name, type, offset_x, offset_y, offset_z, spawntime, direction FROM spawn")
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func LoadSpawns(db *sql.DB) ([]Spawn, error) {
 }
 
 func LoadTowns(db *sql.DB) ([]Town, error) {
-	rows, err := db.Query("SELECT id, name, entry_x, entry_y, entry_z FROM map_towns")
+	rows, err := db.Query("SELECT id, name, x, y, z FROM towns")
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func LoadTowns(db *sql.DB) ([]Town, error) {
 	var towns []Town
 	for rows.Next() {
 		var t Town
-		if err := rows.Scan(&t.ID, &t.Name, &t.EntryX, &t.EntryY, &t.EntryZ); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.X, &t.Y, &t.Z); err != nil {
 			return nil, err
 		}
 		towns = append(towns, t)
@@ -97,7 +97,7 @@ func LoadTowns(db *sql.DB) ([]Town, error) {
 }
 
 func LoadWaypoints(db *sql.DB) ([]Waypoint, error) {
-	rows, err := db.Query("SELECT name, x, y, z FROM map_waypoints")
+	rows, err := db.Query("SELECT name, x, y, z FROM waypoints")
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func LoadWaypoints(db *sql.DB) ([]Waypoint, error) {
 }
 
 func LoadHouses(db *sql.DB) ([]House, error) {
-	rows, err := db.Query("SELECT id, name, entry_x, entry_y, entry_z, rent, town_id, size, guildhall FROM map_houses")
+	rows, err := db.Query("SELECT id, name, entry_x, entry_y, entry_z, rent, town_id, size, guildhall FROM houses")
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func LoadHouses(db *sql.DB) ([]House, error) {
 func SaveTile(db *sql.DB, tile *MapTile) error {
 	blob := EncodeItems(tile.Items)
 	_, err := db.Exec(
-		"INSERT INTO map_tiles (x, y, z, ground_id, flags, house_id, items) "+
+		"INSERT INTO map (x, y, z, ground_id, flags, house_id, items) "+
 			"VALUES (?, ?, ?, ?, ?, ?, ?) "+
 			"ON DUPLICATE KEY UPDATE ground_id=VALUES(ground_id), flags=VALUES(flags), "+
 			"house_id=VALUES(house_id), items=VALUES(items)",
@@ -168,7 +168,7 @@ func BulkInsertTiles(tx *sql.Tx, tiles []MapTile) error {
 			)
 		}
 
-		q := "INSERT INTO map_tiles (x, y, z, ground_id, flags, house_id, items) VALUES " +
+		q := "INSERT INTO map (x, y, z, ground_id, flags, house_id, items) VALUES " +
 			strings.Join(rows, ",") +
 			" ON DUPLICATE KEY UPDATE ground_id=VALUES(ground_id), flags=VALUES(flags), " +
 			"house_id=VALUES(house_id), items=VALUES(items)"

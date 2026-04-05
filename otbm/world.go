@@ -149,9 +149,9 @@ func convertTowns(towns []Town) []gamedata.Town {
 		out[i] = gamedata.Town{
 			ID:     t.ID,
 			Name:   t.Name,
-			EntryX: t.X,
-			EntryY: t.Y,
-			EntryZ: t.Z,
+			X: t.X,
+			Y: t.Y,
+			Z: t.Z,
 		}
 	}
 	return out
