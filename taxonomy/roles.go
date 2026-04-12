@@ -16,12 +16,15 @@ const (
 	MAGICFIELD
 	DECORATION
 	SKIP
+	LOOT
+	INTERACTABLE
+	ENVIRONMENT
 )
 
 var roleNames = [...]string{
 	"GROUND", "GROUND_BORDER", "WALL", "BLOCKING", "DOOR",
 	"STAIRCASE", "CONTAINER", "TELEPORT", "MAGICFIELD",
-	"DECORATION", "SKIP",
+	"DECORATION", "SKIP", "LOOT", "INTERACTABLE", "ENVIRONMENT",
 }
 
 func (r Role) String() string {
@@ -49,17 +52,26 @@ func ClassifyItem(it *gamedata.ItemType) Role {
 		}
 	}
 
-	if it.Floorchange > 0 {
+	if it.HasFlag(gamedata.FlagPickupable) {
+		return LOOT
+	}
+	if it.HasFlag(gamedata.FlagMovable) {
+		return INTERACTABLE
+	}
+	if it.FloorChange > 0 {
 		return STAIRCASE
 	}
-	if it.BlockSolid && (it.IsVertical || it.IsHorizontal) && !it.Pickupable {
-		return WALL
-	}
-	if it.BlockSolid && !it.IsVertical && !it.IsHorizontal && !it.Pickupable {
-		return BLOCKING
-	}
-	if it.TopOrder == 1 && !it.BlockSolid && !it.Pickupable {
+	if it.TopOrder == 1 {
 		return GROUND_BORDER
 	}
-	return DECORATION
+	if it.TopOrder == 2 {
+		return DECORATION
+	}
+	if !it.HasFlag(gamedata.FlagBlockSolid) {
+		return ENVIRONMENT
+	}
+	if it.HasFlag(gamedata.FlagVertical) || it.HasFlag(gamedata.FlagHorizontal) {
+		return WALL
+	}
+	return BLOCKING
 }

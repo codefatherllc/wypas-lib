@@ -1,102 +1,127 @@
 package gamedata
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 )
 
 type ItemType struct {
-	ServerID           uint16          `db:"server_id"`
-	ClientID           uint16          `db:"client_id"`
-	ItemGroup          uint8           `db:"item_group"`
-	ItemTypeVal        uint8           `db:"item_type"`
-	Flags              uint32          `db:"flags"`
-	Speed              uint16          `db:"speed"`
-	TopOrder           int8            `db:"top_order"`
-	Name               string          `db:"name"`
-	Article            string          `db:"article"`
-	Plural             string          `db:"plural"`
-	Description        string          `db:"description"`
-	RuneSpellName      string          `db:"rune_spell_name"`
-	Weight             float32         `db:"weight"`
-	Armor              int16           `db:"armor"`
-	Defense            int16           `db:"defense"`
-	ExtraDefense       int16           `db:"extra_defense"`
-	Attack             int16           `db:"attack"`
-	ExtraAttack        int16           `db:"extra_attack"`
-	AttackSpeed        uint32          `db:"attack_speed"`
-	RotateTo           uint16          `db:"rotate_to"`
-	ContainerSize      uint8           `db:"container_size"`
-	MaxTextLength      uint16          `db:"max_text_length"`
-	WriteOnceItemID    uint16          `db:"write_once_item_id"`
-	Charges            uint32          `db:"charges"`
-	DecayTo            *uint16         `db:"decay_to"`
-	DecayTime          uint32          `db:"decay_time"`
-	TransformEquipTo   uint16          `db:"transform_equip_to"`
-	TransformDeequipTo uint16          `db:"transform_deequip_to"`
-	TransformUseTo     uint16          `db:"transform_use_to"`
-	Duration           uint32          `db:"duration"`
-	ShowDuration       bool            `db:"show_duration"`
-	ShowCharges        bool            `db:"show_charges"`
-	ShowCount          bool            `db:"show_count"`
-	ShowAttributes     bool            `db:"show_attributes"`
-	BreakChance        int8            `db:"break_chance"`
-	HitChance          int8            `db:"hit_chance"`
-	MaxHitChance       int8            `db:"max_hit_chance"`
-	DualWield          bool            `db:"dual_wield"`
-	ShootRange         uint8           `db:"shoot_range"`
-	Worth              uint32          `db:"worth"`
-	LevelDoor          uint32          `db:"level_door"`
-	SpecialDoor        bool            `db:"special_door"`
-	ClosingDoor        bool            `db:"closing_door"`
-	WareID             uint16          `db:"ware_id"`
-	ForceSerialize     bool            `db:"force_serialize"`
-	WeaponType         uint8           `db:"weapon_type"`
-	AmmoType           uint8           `db:"ammo_type"`
-	AmmoAction         uint8           `db:"ammo_action"`
-	ShootType          uint8           `db:"shoot_type"`
-	MagicEffect        uint8           `db:"magic_effect"`
-	SlotPosition       uint32          `db:"slot_position"`
-	WieldPosition      uint32          `db:"wield_position"`
-	FluidSource        uint8           `db:"fluid_source"`
-	CorpseType         uint8           `db:"corpse_type"`
-	LightLevel         int16           `db:"light_level"`
-	LightColor         int16           `db:"light_color"`
-	MinimapColor       uint16          `db:"minimap_color"`
-	BlockSolid         bool            `db:"block_solid"`
-	BlockProjectile    bool            `db:"block_projectile"`
-	BlockPathFind      bool            `db:"block_path_find"`
-	AllowDistRead      bool            `db:"allow_dist_read"`
-	Movable            bool            `db:"movable"`
-	Pickupable         bool            `db:"pickupable"`
-	AllowPickupable    bool            `db:"allow_pickupable"`
-	IsVertical         bool            `db:"is_vertical"`
-	IsHorizontal       bool            `db:"is_horizontal"`
-	WalkStack          bool            `db:"walk_stack"`
-	Replaceable        bool            `db:"replaceable"`
-	CanWriteText       bool            `db:"can_write_text"`
-	CanReadText        bool            `db:"can_read_text"`
-	StopTime           bool            `db:"stop_time"`
-	Floorchange        uint16          `db:"floorchange"`
-	BedPartnerDir      uint8           `db:"bed_partner_dir"`
-	MaleTransformTo    uint16          `db:"male_transform_to"`
-	MaleLooktype       uint16          `db:"male_looktype"`
-	FemaleTransformTo  uint16          `db:"female_transform_to"`
-	FemaleLooktype     uint16          `db:"female_looktype"`
-	Cache              bool            `db:"cache"`
-	HasHeight          bool            `db:"-"`
-	Usable             bool            `db:"-"`
-	Stackable          bool            `db:"-"`
-	AlwaysOnTop        bool            `db:"-"`
-	Rotable            bool            `db:"-"`
-	IsHangable         bool            `db:"-"`
-	LookThrough        bool            `db:"-"`
-	IsAnimation        bool            `db:"-"`
-	Text               string          `db:"-"`
-	Writer             string          `db:"-"`
-	Date               int32           `db:"-"`
-	Abilities          NullableAbilities `db:"abilities"`
+	ServerID      uint16       `db:"id"`
+	ClientID      uint16       `db:"client_id"`
+	ItemGroup     uint8        `db:"item_group"`
+	ItemTypeVal   uint8        `db:"item_type"`
+	Flags         uint32       `db:"flags"`
+	Speed         uint16       `db:"speed"`
+	TopOrder      int8         `db:"top_order"`
+	FloorChange   uint16       `db:"floor_change"`
+	LightLevel    int16        `db:"light_level"`
+	LightColor    int16        `db:"light_color"`
+	ContainerSize uint8        `db:"container_size"`
+	FluidSource   uint8        `db:"fluid_source"`
+	DecayTo       *uint16      `db:"decay_to"`
+	DecayTime     uint32       `db:"decay_time"`
+	Charges       uint32       `db:"charges"`
+	Weight        float32      `db:"weight"`
+	Cacheable     bool         `db:"cacheable"`
+	MustSerialize bool         `db:"must_serialize"`
+	Attributes    NullableJSON `db:"attributes"`
+}
+
+// ItemTypeAttributes holds everything that moved out of columns into
+// the attributes JSON blob. Flat structure — abilities merged in.
+type ItemTypeAttributes struct {
+	Name          string `json:"name,omitempty"`
+	Article       string `json:"article,omitempty"`
+	Plural        string `json:"plural,omitempty"`
+	Description   string `json:"description,omitempty"`
+	RuneSpellName string `json:"runeSpellName,omitempty"`
+	Text          string `json:"text,omitempty"`
+	Writer        string `json:"writer,omitempty"`
+
+	Armor           int16  `json:"armor,omitempty"`
+	Defense         int16  `json:"defense,omitempty"`
+	ExtraDefense    int16  `json:"extraDefense,omitempty"`
+	Attack          int16  `json:"attack,omitempty"`
+	ExtraAttack     int16  `json:"extraAttack,omitempty"`
+	AttackSpeed     uint32 `json:"attackSpeed,omitempty"`
+	RotateTo        uint16 `json:"rotateTo,omitempty"`
+	MaxTextLength   uint16 `json:"maxTextLength,omitempty"`
+	WriteOnceItemID uint16 `json:"writeOnceItemId,omitempty"`
+	Worth           uint32 `json:"worth,omitempty"`
+	LevelDoor       uint32 `json:"levelDoor,omitempty"`
+	ShootRange      uint8  `json:"shootRange,omitempty"`
+	HitChance       int8   `json:"hitChance,omitempty"`
+	MaxHitChance    int8   `json:"maxHitChance,omitempty"`
+	BreakChance     int8   `json:"breakChance,omitempty"`
+
+	ShowDuration    bool `json:"showDuration,omitempty"`
+	ShowCharges     bool `json:"showCharges,omitempty"`
+	ShowCount       bool `json:"showCount,omitempty"`
+	ShowAttributes  bool `json:"showAttributes,omitempty"`
+	DualWield       bool `json:"dualWield,omitempty"`
+	SpecialDoor     bool `json:"specialDoor,omitempty"`
+	ClosingDoor     bool `json:"closingDoor,omitempty"`
+	Replaceable     bool `json:"replaceable,omitempty"`
+	AllowPickupable bool `json:"allowPickupable,omitempty"`
+	StopTime        bool `json:"stopTime,omitempty"`
+	CanWriteText    bool `json:"canWriteText,omitempty"`
+
+	WeaponType    uint8 `json:"weaponType,omitempty"`
+	AmmoType      uint8 `json:"ammoType,omitempty"`
+	AmmoAction    uint8 `json:"ammoAction,omitempty"`
+	ShootType     uint8 `json:"shootType,omitempty"`
+	MagicEffect   uint8 `json:"magicEffect,omitempty"`
+	CorpseType    uint8 `json:"corpseType,omitempty"`
+	BedPartnerDir uint8 `json:"bedPartnerDir,omitempty"`
+
+	SlotPosition  uint32 `json:"slotPosition,omitempty"`
+	WieldPosition uint32 `json:"wieldPosition,omitempty"`
+	WareID        uint16 `json:"wareId,omitempty"`
+	MinimapColor  uint16 `json:"minimapColor,omitempty"`
+
+	TransformEquipTo   uint16 `json:"transformEquipTo,omitempty"`
+	TransformDeequipTo uint16 `json:"transformDeEquipTo,omitempty"`
+	TransformUseTo     uint16 `json:"transformUseTo,omitempty"`
+	MaleTransformTo    uint16 `json:"maleTransformTo,omitempty"`
+	MaleLooktype       uint16 `json:"maleLooktype,omitempty"`
+	FemaleTransformTo  uint16 `json:"femaleTransformTo,omitempty"`
+	FemaleLooktype     uint16 `json:"femaleLooktype,omitempty"`
+
+	Date int32 `json:"date,omitempty"`
+
+	// Abilities (merged flat)
+	AbilitySpeed          int32 `json:"abilitySpeed,omitempty"`
+	HealthGain            int32 `json:"healthGain,omitempty"`
+	HealthTicks           int32 `json:"healthTicks,omitempty"`
+	ManaGain              int32 `json:"manaGain,omitempty"`
+	ManaTicks             int32 `json:"manaTicks,omitempty"`
+	ManaShield            bool  `json:"manaShield,omitempty"`
+	Invisible             bool  `json:"invisible,omitempty"`
+	Regeneration          bool  `json:"regeneration,omitempty"`
+	PreventLoss           bool  `json:"preventLoss,omitempty"`
+	PreventDrop           bool  `json:"preventDrop,omitempty"`
+	ConditionSuppressions int32 `json:"conditionSuppressions,omitempty"`
+	ElementType           int   `json:"elementType,omitempty"`
+	ElementDamage         int16 `json:"elementDamage,omitempty"`
+
+	Skills        [7]int32 `json:"skills,omitempty"`
+	SkillsPercent [7]int32 `json:"skillsPercent,omitempty"`
+	Stats         [4]int32 `json:"stats,omitempty"`
+	StatsPercent  [4]int32 `json:"statsPercent,omitempty"`
+	Increment     [4]int16 `json:"increment,omitempty"`
+
+	Absorb         map[int]int16 `json:"absorb,omitempty"`
+	FieldAbsorb    map[int]int16 `json:"fieldAbsorb,omitempty"`
+	ReflectPercent map[int]int16 `json:"reflectPercent,omitempty"`
+	ReflectChance  map[int]int16 `json:"reflectChance,omitempty"`
+
+	FieldCombatType int   `json:"fieldCombatType,omitempty"`
+	FieldTicks      int32 `json:"fieldTicks,omitempty"`
+	FieldCount      int32 `json:"fieldCount,omitempty"`
+	FieldStart      int32 `json:"fieldStart,omitempty"`
+	FieldDamage     int32 `json:"fieldDamage,omitempty"`
 }
 
 // Combat type indices (bitfield values matching server enums)
@@ -115,66 +140,55 @@ const (
 	CombatDeath     = 1 << 11
 )
 
-type Abilities struct {
-	Speed     int32 `json:"speed,omitempty"`
-	HealthGain int32 `json:"healthGain,omitempty"`
-	HealthTicks int32 `json:"healthTicks,omitempty"`
-	ManaGain   int32 `json:"manaGain,omitempty"`
-	ManaTicks  int32 `json:"manaTicks,omitempty"`
+// Item flag bit positions (from OTB itemflags_t).
+const (
+	FlagBlockSolid      uint32 = 1 << 0
+	FlagBlockProjectile uint32 = 1 << 1
+	FlagBlockPathFind   uint32 = 1 << 2
+	FlagHasHeight       uint32 = 1 << 3
+	FlagUsable          uint32 = 1 << 4
+	FlagPickupable      uint32 = 1 << 5
+	FlagMovable         uint32 = 1 << 6
+	FlagStackable       uint32 = 1 << 7
+	FlagAlwaysOnTop     uint32 = 1 << 13
+	FlagReadable        uint32 = 1 << 14
+	FlagRotable         uint32 = 1 << 15
+	FlagHangable        uint32 = 1 << 16
+	FlagVertical        uint32 = 1 << 17
+	FlagHorizontal      uint32 = 1 << 18
+	FlagAllowDistRead   uint32 = 1 << 20
+	FlagLookThrough     uint32 = 1 << 23
+	FlagAnimation       uint32 = 1 << 24
+	FlagWalkStack       uint32 = 1 << 25
+)
 
-	ManaShield   bool `json:"manaShield,omitempty"`
-	Invisible    bool `json:"invisible,omitempty"`
-	Regeneration bool `json:"regeneration,omitempty"`
-	PreventLoss  bool `json:"preventLoss,omitempty"`
-	PreventDrop  bool `json:"preventDrop,omitempty"`
+func (it *ItemType) HasFlag(f uint32) bool { return it.Flags&f != 0 }
 
-	// skills[0..6]: fist, club, sword, axe, dist, shield, fish
-	Skills        [7]int32 `json:"skills,omitempty"`
-	SkillsPercent [7]int32 `json:"skillsPercent,omitempty"`
-
-	// stats[0..3]: maxHealth, maxMana, soul, magicLevel
-	Stats        [4]int32 `json:"stats,omitempty"`
-	StatsPercent [4]int32 `json:"statsPercent,omitempty"`
-
-	// increment[0..3]: healingValue, healingPercent, magicValue, magicPercent
-	Increment [4]int16 `json:"increment,omitempty"`
-
-	// Keyed by combat type bitfield value (1,2,4,8,...,2048)
-	Absorb      map[int]int16 `json:"absorb,omitempty"`
-	FieldAbsorb map[int]int16 `json:"fieldAbsorb,omitempty"`
-
-	// reflect[type][combatType] — "percent" and "chance"
-	ReflectPercent map[int]int16 `json:"reflectPercent,omitempty"`
-	ReflectChance  map[int]int16 `json:"reflectChance,omitempty"`
-
-	ElementType   int   `json:"elementType,omitempty"`
-	ElementDamage int16 `json:"elementDamage,omitempty"`
-
-	ConditionSuppressions int32 `json:"conditionSuppressions,omitempty"`
-
-	FieldCombatType int   `json:"fieldCombatType,omitempty"`
-	FieldTicks      int32 `json:"fieldTicks,omitempty"`
-	FieldCount      int32 `json:"fieldCount,omitempty"`
-	FieldStart      int32 `json:"fieldStart,omitempty"`
-	FieldDamage     int32 `json:"fieldDamage,omitempty"`
+func (it *ItemType) SetFlag(f uint32, v bool) {
+	if v {
+		it.Flags |= f
+	} else {
+		it.Flags &^= f
+	}
 }
 
-// NullableAbilities wraps Abilities for nullable JSON column scanning.
-type NullableAbilities struct {
-	Abilities
+// NullableJSON wraps json.RawMessage for nullable JSON columns.
+type NullableJSON struct {
+	json.RawMessage
 	Valid bool
 }
 
-func (a NullableAbilities) Value() (driver.Value, error) {
-	if !a.Valid {
+func (n NullableJSON) Value() (driver.Value, error) {
+	if !n.Valid || len(n.RawMessage) == 0 {
 		return nil, nil
 	}
-	return json.Marshal(a.Abilities)
+	return []byte(n.RawMessage), nil
 }
 
-func (a *NullableAbilities) Scan(src interface{}) error {
+func (n *NullableJSON) Scan(src interface{}) error {
 	if src == nil {
-		a.Valid = false
+		n.Valid = false
+		n.RawMessage = nil
 		return nil
 	}
 	var data []byte
@@ -184,8 +198,46 @@ func (a *NullableAbilities) Scan(src interface{}) error {
 	case string:
 		data = []byte(v)
 	default:
-		return fmt.Errorf("gamedata: cannot scan %T into NullableAbilities", src)
+		return fmt.Errorf("gamedata: cannot scan %T into NullableJSON", src)
 	}
-	a.Valid = true
-	return json.Unmarshal(data, &a.Abilities)
+	n.Valid = true
+	n.RawMessage = data
+	return nil
+}
+
+func (n *NullableJSON) SetAttributes(a *ItemTypeAttributes) error {
+	if a == nil {
+		n.Valid = false
+		n.RawMessage = nil
+		return nil
+	}
+	data, err := json.Marshal(a)
+	if err != nil {
+		return err
+	}
+	n.Valid = true
+	n.RawMessage = data
+	return nil
+}
+
+func (n *NullableJSON) GetAttributes() (*ItemTypeAttributes, error) {
+	if !n.Valid || len(n.RawMessage) == 0 {
+		return nil, nil
+	}
+	var a ItemTypeAttributes
+	if err := json.Unmarshal(n.RawMessage, &a); err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func MarshalAttributes(a *ItemTypeAttributes) (sql.NullString, error) {
+	if a == nil {
+		return sql.NullString{}, nil
+	}
+	data, err := json.Marshal(a)
+	if err != nil {
+		return sql.NullString{}, err
+	}
+	return sql.NullString{String: string(data), Valid: true}, nil
 }

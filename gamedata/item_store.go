@@ -6,76 +6,28 @@ import (
 )
 
 var itemColumns = []string{
-	"server_id", "client_id", "item_group", "item_type", "flags", "speed", "top_order",
-	"name", "article", "plural", "description", "rune_spell_name",
-	"weight", "armor", "defense", "extra_defense", "attack", "extra_attack", "attack_speed",
-	"rotate_to", "container_size", "max_text_length", "write_once_item_id",
-	"charges", "decay_to", "decay_time",
-	"transform_equip_to", "transform_deequip_to", "transform_use_to",
-	"duration", "show_duration", "show_charges", "show_count", "show_attributes",
-	"break_chance", "hit_chance", "max_hit_chance", "dual_wield",
-	"shoot_range", "worth", "level_door", "special_door", "closing_door",
-	"ware_id", "force_serialize",
-	"weapon_type", "ammo_type", "ammo_action", "shoot_type", "magic_effect",
-	"slot_position", "wield_position", "fluid_source", "corpse_type",
-	"light_level", "light_color", "minimap_color",
-	"block_solid", "block_projectile", "block_path_find", "allow_dist_read",
-	"movable", "pickupable", "allow_pickupable",
-	"is_vertical", "is_horizontal", "walk_stack", "replaceable",
-	"can_write_text", "can_read_text", "stop_time",
-	"floorchange", "bed_partner_dir",
-	"male_transform_to", "male_looktype", "female_transform_to", "female_looktype",
-	"abilities",
+	"server_id", "client_id", "item_group", "item_type", "flags",
+	"speed", "top_order", "floor_change", "light_level", "light_color",
+	"container_size", "fluid_source", "decay_to", "decay_time",
+	"charges", "weight", "cacheable", "must_serialize", "attributes",
 }
 
 func scanItemType(row interface{ Scan(...interface{}) error }) (*ItemType, error) {
 	var it ItemType
 	return &it, row.Scan(
-		&it.ServerID, &it.ClientID, &it.ItemGroup, &it.ItemTypeVal, &it.Flags, &it.Speed, &it.TopOrder,
-		&it.Name, &it.Article, &it.Plural, &it.Description, &it.RuneSpellName,
-		&it.Weight, &it.Armor, &it.Defense, &it.ExtraDefense, &it.Attack, &it.ExtraAttack, &it.AttackSpeed,
-		&it.RotateTo, &it.ContainerSize, &it.MaxTextLength, &it.WriteOnceItemID,
-		&it.Charges, &it.DecayTo, &it.DecayTime,
-		&it.TransformEquipTo, &it.TransformDeequipTo, &it.TransformUseTo,
-		&it.Duration, &it.ShowDuration, &it.ShowCharges, &it.ShowCount, &it.ShowAttributes,
-		&it.BreakChance, &it.HitChance, &it.MaxHitChance, &it.DualWield,
-		&it.ShootRange, &it.Worth, &it.LevelDoor, &it.SpecialDoor, &it.ClosingDoor,
-		&it.WareID, &it.ForceSerialize,
-		&it.WeaponType, &it.AmmoType, &it.AmmoAction, &it.ShootType, &it.MagicEffect,
-		&it.SlotPosition, &it.WieldPosition, &it.FluidSource, &it.CorpseType,
-		&it.LightLevel, &it.LightColor, &it.MinimapColor,
-		&it.BlockSolid, &it.BlockProjectile, &it.BlockPathFind, &it.AllowDistRead,
-		&it.Movable, &it.Pickupable, &it.AllowPickupable,
-		&it.IsVertical, &it.IsHorizontal, &it.WalkStack, &it.Replaceable,
-		&it.CanWriteText, &it.CanReadText, &it.StopTime,
-		&it.Floorchange, &it.BedPartnerDir,
-		&it.MaleTransformTo, &it.MaleLooktype, &it.FemaleTransformTo, &it.FemaleLooktype,
-		&it.Abilities,
+		&it.ServerID, &it.ClientID, &it.ItemGroup, &it.ItemTypeVal, &it.Flags,
+		&it.Speed, &it.TopOrder, &it.FloorChange, &it.LightLevel, &it.LightColor,
+		&it.ContainerSize, &it.FluidSource, &it.DecayTo, &it.DecayTime,
+		&it.Charges, &it.Weight, &it.Cacheable, &it.MustSerialize, &it.Attributes,
 	)
 }
 
 func itemValues(it *ItemType) []interface{} {
 	return []interface{}{
-		it.ServerID, it.ClientID, it.ItemGroup, it.ItemTypeVal, it.Flags, it.Speed, it.TopOrder,
-		it.Name, it.Article, it.Plural, it.Description, it.RuneSpellName,
-		it.Weight, it.Armor, it.Defense, it.ExtraDefense, it.Attack, it.ExtraAttack, it.AttackSpeed,
-		it.RotateTo, it.ContainerSize, it.MaxTextLength, it.WriteOnceItemID,
-		it.Charges, it.DecayTo, it.DecayTime,
-		it.TransformEquipTo, it.TransformDeequipTo, it.TransformUseTo,
-		it.Duration, it.ShowDuration, it.ShowCharges, it.ShowCount, it.ShowAttributes,
-		it.BreakChance, it.HitChance, it.MaxHitChance, it.DualWield,
-		it.ShootRange, it.Worth, it.LevelDoor, it.SpecialDoor, it.ClosingDoor,
-		it.WareID, it.ForceSerialize,
-		it.WeaponType, it.AmmoType, it.AmmoAction, it.ShootType, it.MagicEffect,
-		it.SlotPosition, it.WieldPosition, it.FluidSource, it.CorpseType,
-		it.LightLevel, it.LightColor, it.MinimapColor,
-		it.BlockSolid, it.BlockProjectile, it.BlockPathFind, it.AllowDistRead,
-		it.Movable, it.Pickupable, it.AllowPickupable,
-		it.IsVertical, it.IsHorizontal, it.WalkStack, it.Replaceable,
-		it.CanWriteText, it.CanReadText, it.StopTime,
-		it.Floorchange, it.BedPartnerDir,
-		it.MaleTransformTo, it.MaleLooktype, it.FemaleTransformTo, it.FemaleLooktype,
-		it.Abilities,
+		it.ServerID, it.ClientID, it.ItemGroup, it.ItemTypeVal, it.Flags,
+		it.Speed, it.TopOrder, it.FloorChange, it.LightLevel, it.LightColor,
+		it.ContainerSize, it.FluidSource, it.DecayTo, it.DecayTime,
+		it.Charges, it.Weight, it.Cacheable, it.MustSerialize, it.Attributes,
 	}
 }
 

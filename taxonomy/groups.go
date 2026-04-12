@@ -31,27 +31,36 @@ func GroupByMinimapColor(items []gamedata.ItemType, roleMap map[uint16]Role) map
 		if !ok || role == SKIP {
 			continue
 		}
-		if it.MinimapColor == 0 {
+		a := attrs(it)
+		if a.MinimapColor == 0 {
 			continue
 		}
 
-		g, exists := groups[it.MinimapColor]
+		g, exists := groups[a.MinimapColor]
 		if !exists {
-			name := KnownGroundNames[it.MinimapColor]
+			name := KnownGroundNames[a.MinimapColor]
 			if name == "" {
-				name = fmt.Sprintf("unknown_%d", it.MinimapColor)
+				name = fmt.Sprintf("unknown_%d", a.MinimapColor)
 			}
 			g = &SemanticGroup{
 				Index:        idx,
 				Name:         name,
-				MinimapColor: it.MinimapColor,
+				MinimapColor: a.MinimapColor,
 				Role:         role,
 			}
-			groups[it.MinimapColor] = g
+			groups[a.MinimapColor] = g
 			idx++
 		}
 		g.Items = append(g.Items, it.ServerID)
 	}
 
 	return groups
+}
+
+func attrs(it *gamedata.ItemType) gamedata.ItemTypeAttributes {
+	a, _ := it.Attributes.GetAttributes()
+	if a == nil {
+		return gamedata.ItemTypeAttributes{}
+	}
+	return *a
 }
