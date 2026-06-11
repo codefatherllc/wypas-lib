@@ -73,6 +73,8 @@ type Taxonomy struct {
 	GroundGroups    map[string]*SemanticGroup `json:"ground_groups"`
 	WallGroups      map[string]*SemanticGroup `json:"wall_groups,omitempty"`
 	DecoVocab       map[string]int            `json:"deco_vocab"`
+	GroundIDVocab   map[string]int            `json:"ground_id_vocab,omitempty"`
+	BorderVocab     map[string]int            `json:"border_vocab,omitempty"`
 	RoleMap         map[string]string         `json:"role_map,omitempty"`
 	AdjacencyRules  []AdjacencyRule           `json:"adjacency_rules"`
 	WallPatterns    []WallPattern             `json:"wall_patterns"`
@@ -90,6 +92,10 @@ type Taxonomy struct {
 	itemToGroup     map[uint16]int
 	itemToRole      map[uint16]string
 	decoByIndex     map[int]uint16
+	groundIDIndex   map[uint16]int
+	groundIDByVocab map[int]uint16
+	borderIndex     map[uint16]int
+	borderByVocab   map[int]uint16
 	affinityByGroup map[int][]MonsterAffinity
 }
 
@@ -152,6 +158,24 @@ func (t *Taxonomy) init() {
 		var sid uint16
 		fmt.Sscanf(key, "%d", &sid)
 		t.decoByIndex[idx] = sid
+	}
+
+	t.groundIDIndex = make(map[uint16]int, len(t.GroundIDVocab))
+	t.groundIDByVocab = make(map[int]uint16, len(t.GroundIDVocab))
+	for key, idx := range t.GroundIDVocab {
+		var sid uint16
+		fmt.Sscanf(key, "%d", &sid)
+		t.groundIDIndex[sid] = idx
+		t.groundIDByVocab[idx] = sid
+	}
+
+	t.borderIndex = make(map[uint16]int, len(t.BorderVocab))
+	t.borderByVocab = make(map[int]uint16, len(t.BorderVocab))
+	for key, idx := range t.BorderVocab {
+		var sid uint16
+		fmt.Sscanf(key, "%d", &sid)
+		t.borderIndex[sid] = idx
+		t.borderByVocab[idx] = sid
 	}
 
 	// Load role_map from JSON (written by scrapper) — overrides inferred roles
@@ -219,6 +243,22 @@ func (t *Taxonomy) DecoIndex(serverID uint16) int {
 
 func (t *Taxonomy) DecoItemID(vocabIndex int) uint16 {
 	return t.decoByIndex[vocabIndex]
+}
+
+func (t *Taxonomy) GroundIDIndex(serverID uint16) int {
+	return t.groundIDIndex[serverID]
+}
+
+func (t *Taxonomy) GroundIDForVocab(vocabIndex int) uint16 {
+	return t.groundIDByVocab[vocabIndex]
+}
+
+func (t *Taxonomy) BorderIndex(serverID uint16) int {
+	return t.borderIndex[serverID]
+}
+
+func (t *Taxonomy) BorderItemID(vocabIndex int) uint16 {
+	return t.borderByVocab[vocabIndex]
 }
 
 func (t *Taxonomy) MinimapColorForGroup(index int) uint16 {
