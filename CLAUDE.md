@@ -18,11 +18,12 @@ No binary output. This is a library module consumed via `go get`.
 | `jwt` | `Claims`, `ParseToken`, `SignToken`, `Middleware`, `RequireAdmin`, `GetClaims` |
 | `middleware` | `CORS(origins...)` — Access-Control headers + OPTIONS preflight |
 | `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.) |
+| `gpu` | Renderer interface for GPU-accelerated sprite filters (wypas-graphics client contract) |
 | `otb` | Legacy file loading (OTB+XML→`gamedata.ItemType`, OTBM+XMLs→gamedata world types). Used by otconv, creator demo, api demo. |
 | `otbm` | Raw binary OTBM/OTB parser (internal — `otb/` is the high-level loader returning `gamedata.*` types) |
 | `maptile` | Map tile renderer (`Renderer`, `RenderTile`, `RenderMinimapImage`, `EncodePNG`, `From8Bit`). Sprite + minimap rendering with floor stacking, displacement, elevation, patterns. |
 | `sprite` | `Cache` (dat+spr loader, PNG render), `DatFile`, `SpriteFile`, outfit color palette |
-| `taxonomy` | Item classification (`Role`, `ClassifyItem`), semantic grouping (`GroupByMinimapColor`, `BuildFromItems`), taxonomy JSON schema types (`SemanticGroup`, `AdjacencyRule`, `WallPattern`, `MonsterAffinity`, `WFCAdjacencyData`), JSON loader (`LoadTaxonomy`) + 15 lookup methods. Shared between brain (consumer) and scrapper (producer). |
+| `taxonomy` | Item classification (`Role`, `ClassifyItem`), semantic grouping (`GroupByMinimapColor`, `BuildFromItems`), taxonomy JSON schema types (`SemanticGroup`, `AdjacencyRule`, `WallPattern`, `MonsterAffinity`, `WFCAdjacencyData`), compact vocab maps (`ground_id_vocab`, `border_vocab`, `deco_vocab` + index/inverse lookups), JSON loader (`LoadTaxonomy`). Shared between brain (consumer) and scrapper (producer). NB: `compat/v1.26` branch preserves the classification the trained brain model is paired with; main carries the v2 role rework. |
 | `worlds` | `Load(path)` → `WorldList` from JSON, `All()`, `ByID()`, `Default()` |
 
 ## OTBM Types
