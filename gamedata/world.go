@@ -67,11 +67,11 @@ func EncodeItems(items []uint16) []byte {
 }
 
 type Spawn struct {
-	ID        uint32           `db:"id"`
-	CenterX   uint16           `db:"center_x"`
-	CenterY   uint16           `db:"center_y"`
-	CenterZ   uint8            `db:"center_z"`
-	Radius    uint8            `db:"radius"`
+	ID        uint32 `db:"id"`
+	CenterX   uint16 `db:"center_x"`
+	CenterY   uint16 `db:"center_y"`
+	CenterZ   uint8  `db:"center_z"`
+	Radius    uint8  `db:"radius"`
 	Creatures []SpawnCreature
 }
 
@@ -88,11 +88,11 @@ type SpawnCreature struct {
 }
 
 type Town struct {
-	ID     uint32 `db:"id"`
-	Name   string `db:"name"`
-	X uint16 `db:"x"`
-	Y uint16 `db:"y"`
-	Z uint8  `db:"z"`
+	ID   uint32 `db:"id"`
+	Name string `db:"name"`
+	X    uint16 `db:"x"`
+	Y    uint16 `db:"y"`
+	Z    uint8  `db:"z"`
 }
 
 type Waypoint struct {

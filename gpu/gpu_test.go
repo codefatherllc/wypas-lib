@@ -151,10 +151,10 @@ func TestResizeNN(t *testing.T) {
 	// 4x4 image with distinct quadrant colors
 	src := make([]byte, 4*4*4)
 	colors := [][4]byte{
-		{255, 0, 0, 255},     // top-left red
-		{0, 255, 0, 255},     // top-right green
-		{0, 0, 255, 255},     // bottom-left blue
-		{255, 255, 0, 255},   // bottom-right yellow
+		{255, 0, 0, 255},   // top-left red
+		{0, 255, 0, 255},   // top-right green
+		{0, 0, 255, 255},   // bottom-left blue
+		{255, 255, 0, 255}, // bottom-right yellow
 	}
 	for y := 0; y < 4; y++ {
 		for x := 0; x < 4; x++ {

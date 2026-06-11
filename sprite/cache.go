@@ -11,12 +11,12 @@ import (
 )
 
 type Cache struct {
-	dat            *DatFile
-	spr            *SpriteFile
-	mu             sync.RWMutex
-	png            map[uint16][]byte
-	pngByServerID  map[uint16][]byte
-	renderer       gpu.Renderer
+	dat           *DatFile
+	spr           *SpriteFile
+	mu            sync.RWMutex
+	png           map[uint16][]byte
+	pngByServerID map[uint16][]byte
+	renderer      gpu.Renderer
 }
 
 func NewCache(datPath, sprPath string, serverToClient map[uint16]uint16) (*Cache, error) {
@@ -105,7 +105,9 @@ func (c *Cache) EffectPNG(id uint16, frame int) ([]byte, error) {
 	w := int(effect.Width)
 	h := int(effect.Height)
 	ac := int(effect.AnimCount)
-	if ac == 0 { ac = 1 }
+	if ac == 0 {
+		ac = 1
+	}
 	frame = frame % ac
 
 	canvasW := w * 32
@@ -153,8 +155,12 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 	h := int(missile.Height)
 	xd := int(missile.XDiv)
 	yd := int(missile.YDiv)
-	if xd == 0 { xd = 1 }
-	if yd == 0 { yd = 1 }
+	if xd == 0 {
+		xd = 1
+	}
+	if yd == 0 {
+		yd = 1
+	}
 	totalDirs := xd * yd
 	direction = direction % totalDirs
 	xPat := direction % xd
@@ -194,6 +200,6 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 	return renderPNG(canvas)
 }
 
-func (c *Cache) Dat() *DatFile        { return c.dat }
-func (c *Cache) Spr() *SpriteFile     { return c.spr }
+func (c *Cache) Dat() *DatFile              { return c.dat }
+func (c *Cache) Spr() *SpriteFile           { return c.spr }
 func (c *Cache) SetRenderer(r gpu.Renderer) { c.renderer = r }

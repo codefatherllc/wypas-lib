@@ -18,27 +18,27 @@ const (
 )
 
 const (
-	AttrDescription = 1
-	AttrExtFile     = 2
-	AttrTileFlags   = 3
-	AttrActionID    = 4
-	AttrUniqueID    = 5
-	AttrText        = 6
-	AttrDesc        = 7
-	AttrTeleDest    = 8
-	AttrItem        = 9
-	AttrDepotID     = 10
-	AttrSpawnFile   = 11
-	AttrRuneCharges = 12
-	AttrHouseFile   = 13
-	AttrDoorID      = 14
-	AttrCount       = 15
-	AttrDuration    = 16
-	AttrDecayState  = 17
-	AttrWrittenDate = 18
-	AttrWrittenBy   = 19
-	AttrSleeperGUID = 20
-	AttrSleepStart  = 21
+	AttrDescription    = 1
+	AttrExtFile        = 2
+	AttrTileFlags      = 3
+	AttrActionID       = 4
+	AttrUniqueID       = 5
+	AttrText           = 6
+	AttrDesc           = 7
+	AttrTeleDest       = 8
+	AttrItem           = 9
+	AttrDepotID        = 10
+	AttrSpawnFile      = 11
+	AttrRuneCharges    = 12
+	AttrHouseFile      = 13
+	AttrDoorID         = 14
+	AttrCount          = 15
+	AttrDuration       = 16
+	AttrDecayState     = 17
+	AttrWrittenDate    = 18
+	AttrWrittenBy      = 19
+	AttrSleeperGUID    = 20
+	AttrSleepStart     = 21
 	AttrCharges        = 22
 	AttrContainerItems = 23
 	AttrAttrMap        = 128
@@ -66,24 +66,24 @@ type ItemAttrValue struct {
 }
 
 type MapItem struct {
-	ID           uint16
-	ActionID     uint16
-	UniqueID     uint16
-	TeleDest     *TeleportDest
-	DoorID       uint8
-	DepotID      uint16
-	Text         string
-	Description  string
-	Charges      uint16
-	RuneCharges  uint8
-	Count        uint8
-	Duration     uint32
-	WrittenDate  uint32
-	WrittenBy    string
-	SleeperGUID  uint32
-	SleepStart   uint32
-	CustomAttrs  map[string]ItemAttrValue
-	SubItems     []MapItem
+	ID          uint16
+	ActionID    uint16
+	UniqueID    uint16
+	TeleDest    *TeleportDest
+	DoorID      uint8
+	DepotID     uint16
+	Text        string
+	Description string
+	Charges     uint16
+	RuneCharges uint8
+	Count       uint8
+	Duration    uint32
+	WrittenDate uint32
+	WrittenBy   string
+	SleeperGUID uint32
+	SleepStart  uint32
+	CustomAttrs map[string]ItemAttrValue
+	SubItems    []MapItem
 }
 
 type MapTile struct {

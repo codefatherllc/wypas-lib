@@ -147,11 +147,11 @@ func convertTowns(towns []Town) []gamedata.Town {
 	out := make([]gamedata.Town, len(towns))
 	for i, t := range towns {
 		out[i] = gamedata.Town{
-			ID:     t.ID,
-			Name:   t.Name,
-			X: t.X,
-			Y: t.Y,
-			Z: t.Z,
+			ID:   t.ID,
+			Name: t.Name,
+			X:    t.X,
+			Y:    t.Y,
+			Z:    t.Z,
 		}
 	}
 	return out
@@ -192,16 +192,16 @@ func loadSpawns(path string) ([]gamedata.Spawn, error) {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
 				Name: m.Name, Type: "monster",
 				OffsetX: m.X, OffsetY: m.Y, OffsetZ: m.Z,
-				SpawnTime:  m.SpawnTime,
-				Direction:  m.Direction,
+				SpawnTime: m.SpawnTime,
+				Direction: m.Direction,
 			})
 		}
 		for _, n := range s.NPCs {
 			gs.Creatures = append(gs.Creatures, gamedata.SpawnCreature{
 				Name: n.Name, Type: "npc",
 				OffsetX: n.X, OffsetY: n.Y, OffsetZ: n.Z,
-				SpawnTime:  n.SpawnTime,
-				Direction:  n.Direction,
+				SpawnTime: n.SpawnTime,
+				Direction: n.Direction,
 			})
 		}
 		spawns = append(spawns, gs)
