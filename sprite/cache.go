@@ -16,6 +16,8 @@ type Cache struct {
 	mu             sync.RWMutex
 	png            map[uint16][]byte
 	pngByServerID  map[uint16][]byte
+	itemPNG        map[uint32][]byte
+	serverToClient map[uint16]uint16
 	renderer       gpu.Renderer
 }
 
@@ -31,23 +33,19 @@ func NewCache(datPath, sprPath string, serverToClient map[uint16]uint16) (*Cache
 	}
 
 	c := &Cache{
-		dat: dat,
-		spr: spr,
-		png: make(map[uint16][]byte, len(dat.Items)),
+		dat:            dat,
+		spr:            spr,
+		png:            make(map[uint16][]byte, len(dat.Items)),
+		itemPNG:        make(map[uint32][]byte),
+		serverToClient: serverToClient,
 	}
 
 	for id, item := range dat.Items {
-		if len(item.SpriteIDs) == 0 || item.SpriteIDs[0] == 0 {
+		if !hasVisibleTile(item) {
 			continue
 		}
 
-		img, err := spr.GetRGBA(uint32(item.SpriteIDs[0]))
-		if err != nil {
-			log.Printf("sprite cache: skip item %d: %v", id, err)
-			continue
-		}
-
-		data, err := renderPNG(img)
+		data, err := renderPNG(c.renderItemRGBA(item, 1))
 		if err != nil {
 			log.Printf("sprite cache: encode item %d: %v", id, err)
 			continue
@@ -105,7 +103,9 @@ func (c *Cache) EffectPNG(id uint16, frame int) ([]byte, error) {
 	w := int(effect.Width)
 	h := int(effect.Height)
 	ac := int(effect.AnimCount)
-	if ac == 0 { ac = 1 }
+	if ac == 0 {
+		ac = 1
+	}
 	frame = frame % ac
 
 	canvasW := w * 32
@@ -153,8 +153,12 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 	h := int(missile.Height)
 	xd := int(missile.XDiv)
 	yd := int(missile.YDiv)
-	if xd == 0 { xd = 1 }
-	if yd == 0 { yd = 1 }
+	if xd == 0 {
+		xd = 1
+	}
+	if yd == 0 {
+		yd = 1
+	}
 	totalDirs := xd * yd
 	direction = direction % totalDirs
 	xPat := direction % xd
@@ -194,6 +198,6 @@ func (c *Cache) MissilePNG(id uint16, direction int) ([]byte, error) {
 	return renderPNG(canvas)
 }
 
-func (c *Cache) Dat() *DatFile        { return c.dat }
-func (c *Cache) Spr() *SpriteFile     { return c.spr }
+func (c *Cache) Dat() *DatFile              { return c.dat }
+func (c *Cache) Spr() *SpriteFile           { return c.spr }
 func (c *Cache) SetRenderer(r gpu.Renderer) { c.renderer = r }
