@@ -238,8 +238,8 @@ func readFlagData(r io.Reader, flag uint8) ([]byte, error) {
 		0x08, 0x09, // Writable, WritableOnce: maxTextLen
 		0x19,       // Elevation
 		0x1C, 0x1D, // MinimapColor, LensHelp
-		0x20,       // Cloth
-		0x22:       // Usable
+		0x20, // Cloth
+		0x22: // Usable
 		buf := make([]byte, 2)
 		_, err := io.ReadFull(r, buf)
 		return buf, err
