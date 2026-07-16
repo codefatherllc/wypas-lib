@@ -17,7 +17,7 @@ No binary output. This is a library module consumed via `go get`.
 | `db` | `Open(dsn, maxOpen, maxIdle)` — MySQL pool with 5min conn lifetime |
 | `jwt` | `Claims`, `ParseToken`, `SignToken`, `Middleware`, `RequireAdmin`, `GetClaims` |
 | `middleware` | `CORS(origins...)` — Access-Control headers + OPTIONS preflight |
-| `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.) |
+| `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.). Also `CreateCharacterFromSample(+Tx)` — the canonical website character creation (copies the vocation sample's stats/world/town/spawn/items/spells/storage; health/mana normalised to max; skills come from the `oncreate_players` trigger). Used by wypas-auth register + wypas-api account panel |
 | `otb` | Legacy file loading (OTB+XML→`gamedata.ItemType`, OTBM+XMLs→gamedata world types). Used by otconv, creator demo, api demo. |
 | `otbm` | Raw binary OTBM/OTB parser (internal — `otb/` is the high-level loader returning `gamedata.*` types) |
 | `maptile` | Map tile renderer (`Renderer`, `RenderTile`, `RenderMinimapImage`, `EncodePNG`, `From8Bit`). Sprite + minimap rendering with floor stacking, displacement, elevation, patterns. |
