@@ -9,7 +9,7 @@ import (
 )
 
 var sampleCols = []string{
-	"id", "level", "vocation", "max_health", "experience", "maglevel",
+	"id", "world_id", "level", "vocation", "max_health", "experience", "maglevel",
 	"max_mana", "manaspent", "soul", "town_id", "cap",
 	"looktype", "lookhead", "lookbody", "looklegs", "lookfeet", "lookaddons",
 	"stamina", "loss_experience", "loss_mana", "loss_skills", "loss_containers", "loss_items",
@@ -18,7 +18,7 @@ var sampleCols = []string{
 
 func rookSampleRow() *sqlmock.Rows {
 	return sqlmock.NewRows(sampleCols).AddRow(
-		2, 1, 0, 150, 0, 0,
+		2, 5, 1, 0, 150, 0, 0,
 		55, 0, 100, 10, 400,
 		128, 78, 68, 58, 76, 0,
 		151200000, 100, 100, 100, 100, 100,
@@ -28,7 +28,7 @@ func rookSampleRow() *sqlmock.Rows {
 
 func paladinSampleRow() *sqlmock.Rows {
 	return sqlmock.NewRows(sampleCols).AddRow(
-		5, 8, 3, 185, 4200, 0,
+		5, 5, 8, 3, 185, 4200, 0,
 		90, 0, 100, 1, 470,
 		128, 78, 68, 58, 76, 0,
 		151200000, 100, 100, 100, 100, 100,
@@ -44,12 +44,12 @@ func TestCreateCharacterRookCopiesSampleAndNormalizesStats(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT id, level, vocation, max_health").
+	mock.ExpectQuery("SELECT id, world_id, level, vocation, max_health").
 		WithArgs("Rook Sample").
 		WillReturnRows(rookSampleRow())
 	mock.ExpectExec("INSERT INTO players").
 		WithArgs(
-			"Newbie", 42, 1, 0, 10, 1067, 523, 5, // name, account, sex, voc, sample town, sample pos
+			"Newbie", 42, 5, 1, 0, 10, 1067, 523, 5, // name, account, sex, voc, sample town, sample pos
 			1, 150, 150, 0, 0, // level, health=max, max_health, exp, maglevel
 			55, 55, 0, 100, 400, // mana=max, max_mana, manaspent, soul, cap
 			128, 78, 68, 58, 76, 0, // looks from sample (male keeps looktype)
@@ -89,12 +89,12 @@ func TestCreateCharacterVocationTownChoiceZeroesPos(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT id, level, vocation, max_health").
+	mock.ExpectQuery("SELECT id, world_id, level, vocation, max_health").
 		WithArgs("Paladin Sample").
 		WillReturnRows(paladinSampleRow())
 	mock.ExpectExec("INSERT INTO players").
 		WithArgs(
-			"Palladyn", 42, 0, 3, 3, 0, 0, 0, // chosen town 3 → pos zeroed (temple drop)
+			"Palladyn", 42, 5, 0, 3, 3, 0, 0, 0, // chosen town 3 → pos zeroed (temple drop)
 			8, 185, 185, 4200, 0,
 			90, 90, 0, 100, 470,
 			136, 10, 20, 30, 40, 0, // female looktype 136, caller colours
@@ -133,12 +133,12 @@ func TestCreateCharacterDisallowedTownKeepsSampleTownAndPos(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT id, level, vocation, max_health").
+	mock.ExpectQuery("SELECT id, world_id, level, vocation, max_health").
 		WithArgs("Paladin Sample").
 		WillReturnRows(paladinSampleRow())
 	mock.ExpectExec("INSERT INTO players").
 		WithArgs(
-			"Palladyn", 42, 1, 3, 1, 434, 504, 7, // town 5 not allowed → sample town + pos
+			"Palladyn", 42, 5, 1, 3, 1, 434, 504, 7, // town 5 not allowed → sample town + pos
 			8, 185, 185, 4200, 0,
 			90, 90, 0, 100, 470,
 			128, 78, 68, 58, 76, 0,
@@ -176,7 +176,7 @@ func TestCreateCharacterUnknownVocationFallsBackToRook(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT id, level, vocation, max_health").
+	mock.ExpectQuery("SELECT id, world_id, level, vocation, max_health").
 		WithArgs("Rook Sample").
 		WillReturnRows(sqlmock.NewRows(sampleCols)) // no row
 	mock.ExpectRollback()
