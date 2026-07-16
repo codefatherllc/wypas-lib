@@ -28,3 +28,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+
+  notify-consumers:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [wypas-api, wypas-auth, wypas-status, wypas-creator]
+    steps:
+      - name: Trigger consumer rebuild (auto-float wypas-lib)
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPLOY_TOKEN }}
+          repository: codefatherllc/${{ matrix.repo }}
+          event-type: dep-bump
+          client-payload: '{"lib_tag": "${{ github.ref_name }}"}'
