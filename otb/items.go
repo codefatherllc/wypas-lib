@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codefatherllc/wypas-lib/gamedata"
-	"github.com/codefatherllc/wypas-lib/otbm"
+	"github.com/codefatherllc/wypas-lib/v2/gamedata"
+	"github.com/codefatherllc/wypas-lib/v2/otbm"
 )
 
 // OTB itemflags_t (from fs/item_loader.hpp)

@@ -1,6 +1,6 @@
 package taxonomy
 
-import "github.com/codefatherllc/wypas-lib/gamedata"
+import "github.com/codefatherllc/wypas-lib/v2/gamedata"
 
 type Role int
 

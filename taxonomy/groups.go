@@ -3,7 +3,7 @@ package taxonomy
 import (
 	"fmt"
 
-	"github.com/codefatherllc/wypas-lib/gamedata"
+	"github.com/codefatherllc/wypas-lib/v2/gamedata"
 )
 
 var KnownGroundNames = map[uint16]string{

@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/codefatherllc/wypas-lib/gpu"
+	"github.com/codefatherllc/wypas-lib/v2/gpu"
 )
 
 const (

@@ -8,9 +8,9 @@ import (
 	"image/draw"
 	"image/png"
 
-	"github.com/codefatherllc/wypas-lib/gpu"
-	"github.com/codefatherllc/wypas-lib/otbm"
-	"github.com/codefatherllc/wypas-lib/sprite"
+	"github.com/codefatherllc/wypas-lib/v2/gpu"
+	"github.com/codefatherllc/wypas-lib/v2/otbm"
+	"github.com/codefatherllc/wypas-lib/v2/sprite"
 )
 
 const TileSize = 256

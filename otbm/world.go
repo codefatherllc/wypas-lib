@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codefatherllc/wypas-lib/gamedata"
+	"github.com/codefatherllc/wypas-lib/v2/gamedata"
 )
 
 type WorldData struct {

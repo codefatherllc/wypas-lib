@@ -1,4 +1,4 @@
-module github.com/codefatherllc/wypas-lib
+module github.com/codefatherllc/wypas-lib/v2
 
 go 1.22.3
 

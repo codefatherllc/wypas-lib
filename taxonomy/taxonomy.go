@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/codefatherllc/wypas-lib/gamedata"
+	"github.com/codefatherllc/wypas-lib/v2/gamedata"
 )
 
 type BuildTaxonomy struct {

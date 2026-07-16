@@ -7,7 +7,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/codefatherllc/wypas-lib/gpu"
+	"github.com/codefatherllc/wypas-lib/v2/gpu"
 )
 
 type Cache struct {
