@@ -52,7 +52,7 @@ func CreateCharacterFromSample(ctx context.Context, db *sql.DB, opts CharacterOp
 	return id, tx.Commit()
 }
 
-// CreateCharacterFromSampleTx copies a sample character (level, stats, spawn
+// CreateCharacterFromSampleTx copies a sample character (world, level, stats, spawn
 // position, town, items, spells, storage) into a new player row owned by the
 // caller's transaction. Unknown vocations fall back to the Rook sample.
 // Health and mana are set to their maximums regardless of the sample's
@@ -70,6 +70,7 @@ func createCharacterFromSample(ctx context.Context, q dbtx, opts CharacterOpts) 
 
 	// ── 1. Read sample player ────────────────────────────────────────
 	var sampleID int
+	var sWorldID int
 	var sLevel, sVocation int
 	var sHealthMax, sManaMax int
 	var sExperience int64
@@ -82,13 +83,13 @@ func createCharacterFromSample(ctx context.Context, q dbtx, opts CharacterOpts) 
 	var sLossExp, sLossMana, sLossSkills, sLossContainers, sLossItems int
 
 	err := q.QueryRowContext(ctx, `
-		SELECT id, level, vocation, max_health, experience, maglevel,
+		SELECT id, world_id, level, vocation, max_health, experience, maglevel,
 		       max_mana, manaspent, soul, town_id, cap,
 		       looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons,
 		       stamina, loss_experience, loss_mana, loss_skills, loss_containers, loss_items,
 		       posx, posy, posz
 		FROM players WHERE name = ? LIMIT 1`, sampleName).Scan(
-		&sampleID, &sLevel, &sVocation, &sHealthMax, &sExperience, &sMagLevel,
+		&sampleID, &sWorldID, &sLevel, &sVocation, &sHealthMax, &sExperience, &sMagLevel,
 		&sManaMax, &sManaSpent, &sSoul, &sTownID, &sCap,
 		&sLookType, &sLookHead, &sLookBody, &sLookLegs, &sLookFeet, &sLookAddons,
 		&sStamina, &sLossExp, &sLossMana, &sLossSkills, &sLossContainers, &sLossItems,
@@ -133,15 +134,15 @@ func createCharacterFromSample(ctx context.Context, q dbtx, opts CharacterOpts) 
 
 	// ── 3. Insert new player ─────────────────────────────────────────
 	res, err := q.ExecContext(ctx, `
-		INSERT INTO players (name, account_id, sex, vocation, town_id, posx, posy, posz,
+		INSERT INTO players (name, account_id, world_id, sex, vocation, town_id, posx, posy, posz,
 		  level, health, max_health, experience, maglevel,
 		  mana, max_mana, manaspent, soul, cap,
 		  looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons,
 		  conditions, stamina,
 		  loss_experience, loss_mana, loss_skills, loss_containers, loss_items,
 		  created)
-		VALUES (?,?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?,?, '',?, ?,?,?,?,?, UNIX_TIMESTAMP())`,
-		opts.Name, opts.AccountID, opts.Sex, sVocation, townID, posX, posY, posZ,
+		VALUES (?,?,?,?,?,?, ?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?,?, '',?, ?,?,?,?,?, UNIX_TIMESTAMP())`,
+		opts.Name, opts.AccountID, sWorldID, opts.Sex, sVocation, townID, posX, posY, posZ,
 		sLevel, sHealthMax, sHealthMax, sExperience, sMagLevel,
 		sManaMax, sManaMax, sManaSpent, sSoul, sCap,
 		looktype, lHead, lBody, lLegs, lFeet, sLookAddons,
