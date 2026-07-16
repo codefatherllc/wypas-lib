@@ -11,12 +11,14 @@ import (
 )
 
 type Cache struct {
-	dat           *DatFile
-	spr           *SpriteFile
-	mu            sync.RWMutex
-	png           map[uint16][]byte
-	pngByServerID map[uint16][]byte
-	renderer      gpu.Renderer
+	dat            *DatFile
+	spr            *SpriteFile
+	mu             sync.RWMutex
+	png            map[uint16][]byte
+	pngByServerID  map[uint16][]byte
+	itemPNG        map[uint32][]byte
+	serverToClient map[uint16]uint16
+	renderer       gpu.Renderer
 }
 
 func NewCache(datPath, sprPath string, serverToClient map[uint16]uint16) (*Cache, error) {
@@ -31,23 +33,19 @@ func NewCache(datPath, sprPath string, serverToClient map[uint16]uint16) (*Cache
 	}
 
 	c := &Cache{
-		dat: dat,
-		spr: spr,
-		png: make(map[uint16][]byte, len(dat.Items)),
+		dat:            dat,
+		spr:            spr,
+		png:            make(map[uint16][]byte, len(dat.Items)),
+		itemPNG:        make(map[uint32][]byte),
+		serverToClient: serverToClient,
 	}
 
 	for id, item := range dat.Items {
-		if len(item.SpriteIDs) == 0 || item.SpriteIDs[0] == 0 {
+		if !hasVisibleTile(item) {
 			continue
 		}
 
-		img, err := spr.GetRGBA(uint32(item.SpriteIDs[0]))
-		if err != nil {
-			log.Printf("sprite cache: skip item %d: %v", id, err)
-			continue
-		}
-
-		data, err := renderPNG(img)
+		data, err := renderPNG(c.renderItemRGBA(item, 1))
 		if err != nil {
 			log.Printf("sprite cache: encode item %d: %v", id, err)
 			continue
