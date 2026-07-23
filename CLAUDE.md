@@ -15,6 +15,7 @@ No binary output. This is a library module consumed via `go get`.
 |---------|---------|
 | `config` | `GetEnv`, `GetEnvInt`, `SplitCSV`, `ConvertDSN` (mysql:// URI to Go DSN) |
 | `db` | `Open(dsn, maxOpen, maxIdle)` — MySQL pool with 5min conn lifetime |
+| `emailnorm` | `Normalize(email)` — canonical e-mail identity for uniqueness (lowercase, `+label` stripped, gmail dots removed + googlemail→gmail). Backs `accounts.email_normalized` (proxy migration 014); used by wypas-auth registration + wypas-api e-mail change |
 | `jwt` | `Claims`, `ParseToken`, `SignToken`, `Middleware`, `RequireAdmin`, `GetClaims` |
 | `middleware` | `CORS(origins...)` — Access-Control headers + OPTIONS preflight |
 | `gamedata` | DB-backed item types + world data (`ItemType`, `MapTile`, `Spawn`, `Town`, etc. + `LoadItemTypes`, `LoadTiles`, etc.). Also `CreateCharacterFromSample(+Tx)` — the canonical website character creation (copies the vocation sample's stats/world/town/spawn/items/spells/storage; health/mana normalised to max; skills come from the `oncreate_players` trigger). Used by wypas-auth register + wypas-api account panel |
