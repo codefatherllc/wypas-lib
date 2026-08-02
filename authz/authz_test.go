@@ -13,7 +13,7 @@ import (
 // one against every group so a mapping change can't slip through unreviewed.
 var allScopes = []string{
 	ScopeReportsView, ScopeBansManage, ScopeSnifferView, ScopePointsGrant,
-	ScopeBlockedNetworks, ScopeMapBlurManage, ScopeTutorReview,
+	ScopeBlockedNetworks, ScopeMapBlurManage, ScopeTutorReview, ScopeCamsManage,
 	ScopeContentPages, ScopeContentShop, ScopeContentMetadata, ScopeCreatorUse,
 	ScopeAccountingView, ScopeAccountingManage, ScopeDBRead, ScopeDBWrite,
 }
@@ -24,8 +24,8 @@ var expected = map[int][]string{
 	1: {},
 	2: {},
 	3: {ScopeBansManage, ScopeSnifferView},
-	4: {ScopeBansManage, ScopeSnifferView, ScopeTutorReview, ScopePointsGrant, ScopeReportsView, ScopeMapBlurManage, ScopeBlockedNetworks},
-	5: {ScopeBansManage, ScopeSnifferView, ScopeTutorReview, ScopePointsGrant, ScopeReportsView, ScopeMapBlurManage, ScopeBlockedNetworks, ScopeContentPages, ScopeContentShop, ScopeContentMetadata, ScopeCreatorUse},
+	4: {ScopeBansManage, ScopeSnifferView, ScopeTutorReview, ScopePointsGrant, ScopeReportsView, ScopeMapBlurManage, ScopeBlockedNetworks, ScopeCamsManage},
+	5: {ScopeBansManage, ScopeSnifferView, ScopeTutorReview, ScopePointsGrant, ScopeReportsView, ScopeMapBlurManage, ScopeBlockedNetworks, ScopeCamsManage, ScopeContentPages, ScopeContentShop, ScopeContentMetadata, ScopeCreatorUse},
 	6: allScopes,
 }
 

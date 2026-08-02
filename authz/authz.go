@@ -14,21 +14,22 @@ import (
 
 // Scope names. Keep in sync with the web router meta.requiresScope values.
 const (
-	ScopeReportsView      = "reports.view"             // list + dismiss player bug reports
-	ScopeBansManage       = "bans.manage"              // account/player/ip bans
-	ScopeSnifferView      = "sniffer.view"             // character inspect (PII: ip, asn, balances)
-	ScopePointsGrant      = "points.grant"             // add/remove premium points
-	ScopeBlockedNetworks  = "blocked_networks.manage"  // website ASN blocklist
-	ScopeMapBlurManage    = "map.blur.manage"          // public-map blur regions
-	ScopeTutorReview      = "tutor.review"             // accept/decline tutor applications
-	ScopeContentPages     = "content.pages.manage"     // CMS/library pages
-	ScopeContentShop      = "content.shop.manage"      // point-shop offers
-	ScopeContentMetadata  = "content.metadata.manage"  // site metadata KV (backs CMS pages)
-	ScopeCreatorUse       = "creator.use"              // map/item/appearance/effect/missile/generator editors
-	ScopeAccountingView   = "accounting.view"          // read sales/refunds/payouts/exports
-	ScopeAccountingManage = "accounting.manage"        // resync/flag/resolve/export/sync
-	ScopeDBRead           = "db.read"                  // schema/table browse (SELECT)
-	ScopeDBWrite          = "db.write"                 // insert/update/delete + raw query console
+	ScopeReportsView      = "reports.view"            // list + dismiss player bug reports
+	ScopeBansManage       = "bans.manage"             // account/player/ip bans
+	ScopeSnifferView      = "sniffer.view"            // character inspect (PII: ip, asn, balances)
+	ScopePointsGrant      = "points.grant"            // add/remove premium points
+	ScopeBlockedNetworks  = "blocked_networks.manage" // website ASN blocklist
+	ScopeMapBlurManage    = "map.blur.manage"         // public-map blur regions
+	ScopeCamsManage       = "cams.manage"             // recategorise/describe/hide/delete any player recording
+	ScopeTutorReview      = "tutor.review"            // accept/decline tutor applications
+	ScopeContentPages     = "content.pages.manage"    // CMS/library pages
+	ScopeContentShop      = "content.shop.manage"     // point-shop offers
+	ScopeContentMetadata  = "content.metadata.manage" // site metadata KV (backs CMS pages)
+	ScopeCreatorUse       = "creator.use"             // map/item/appearance/effect/missile/generator editors
+	ScopeAccountingView   = "accounting.view"         // read sales/refunds/payouts/exports
+	ScopeAccountingManage = "accounting.manage"       // resync/flag/resolve/export/sync
+	ScopeDBRead           = "db.read"                 // schema/table browse (SELECT)
+	ScopeDBWrite          = "db.write"                // insert/update/delete + raw query console
 )
 
 // scopeMinGroup maps each scope to the LOWEST group_id that holds it. The model
@@ -48,6 +49,7 @@ var scopeMinGroup = map[string]int{
 	ScopeReportsView:     4,
 	ScopeMapBlurManage:   4,
 	ScopeBlockedNetworks: 4,
+	ScopeCamsManage:      4,
 	// PM (5) — content + creator
 	ScopeContentPages:    5,
 	ScopeContentShop:     5,
